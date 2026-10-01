@@ -452,6 +452,54 @@ This is intentional because it avoids disclosing whether another user's resource
 
 ---
 
+# DEC-010 — Task Model and Application Boundary (M1)
+
+## Status
+
+Accepted
+
+## Decision
+
+Use integer task/user identifiers, consistent with the conceptual schema. Positive IDs identify users and saved tasks; a task ID of zero represents an unsaved task. The repository assigns the saved identifier and returns a new task instance.
+
+Represent the required due date with `DateOnly`, since tasks specify a calendar deadline without a time or time zone. Optional descriptions are trimmed and blank descriptions become null. Titles are trimmed, required, and limited to 120 characters; descriptions are limited to 1000 characters, following the project definition. Past dates and all defined statuses are allowed. Creation defaults to Pending but may explicitly select another valid status.
+
+TaskItem is immutable and validates its invariants at construction. TaskService constructs a replacement on update, so invalid updates cannot partially mutate an existing task. Application input contains only editable fields, while results are immutable snapshots. Ownership comes exclusively from the current-user argument.
+
+Repository reads and writes must be scoped to the owner. TaskService also checks returned ownership before exposing or modifying data. Missing and inaccessible tasks throw the same TaskNotFoundException with the same message. Invalid input uses framework ArgumentException subtypes; HTTP translation is deferred to the API milestone.
+
+## Rationale and Trade-offs
+
+These choices keep validation reusable without framework dependencies or duplicate rules, make ownership explicit, and avoid accidental mutation through repository references. DateOnly intentionally does not represent a timed deadline. Repository update/delete methods return whether an owned row was affected, allowing the service to handle a task disappearing between lookup and write without claiming success.
+
+---
+
+# DEC-011 — Minimal User Persistence and Deferred Demo Credentials (M2)
+
+## Status
+
+Accepted
+
+## Context
+
+M2 requires a user repository and seed infrastructure, while the milestone plan assigns user/authentication contracts and password hashing to M3. The explicit M2 prompt permits only the minimum persistence boundary and defers usable credentials.
+
+## Decision
+
+Add an immutable User containing Id, Username, and an opaque PasswordHash, plus IUserRepository insert and lookup operations. Zero denotes an unsaved user; storage assigns a positive integer ID. Trim usernames consistently on construction and lookup, retaining the documented schema's default case-sensitive SQLite uniqueness. Password hashing, verification, and any broader authentication normalization policy remain M3 work.
+
+Provide a transactional demo seeder requiring an externally generated hash. Insert three representative tasks only when the demo user is newly created. On username conflict, preserve all existing records, including task edits/deletions and password hash. Supply no usable demo credentials in M2. Compose initialization and seed execution in later startup work.
+
+## Rationale
+
+This implements and tests the required storage without creating placeholder credentials, adding authentication prematurely, resetting an existing account, or duplicating seed tasks. A transaction makes partial seed failure safe to retry.
+
+## Trade-offs
+
+M2 alone does not provide a runnable seeded login. M3 must generate the demo hash with supported framework functionality. An existing account named demo receives no seed tasks; deleted demo tasks are intentionally not restored on subsequent startup.
+
+---
+
 # Adding Future Decisions
 
 Use the following template:

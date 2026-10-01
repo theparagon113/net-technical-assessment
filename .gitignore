@@ -3,6 +3,10 @@ bin/
 obj/
 TestResults/
 
+# Local SQLite data (may contain user password hashes)
+*.db
+*.db-*
+
 # Angular / Node
 node_modules/
 dist/
