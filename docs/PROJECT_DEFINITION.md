@@ -9,7 +9,7 @@
 
 # 1. Source of Truth
 
-Current status: M0–M6 and the post-M3 checkpoint are complete. Both controller-based hosts compose shared services, require one absolute SQLite file, initialize schema, validate compatible JWTs, and expose the specified auth/task endpoints. Auth.Api owns preserved demo seeding. Angular authentication now integrates both hosts, with session restoration, scoped Bearer forwarding, guards and logout. M6 adds responsive task list/forms/confirmed deletion with numeric status and calendar-date mappings. Final full-system checks (M7) and submission/presentation (M8) remain. See M4_COMPLETION.md, M5_COMPLETION.md, M6_COMPLETION.md and REQUIREMENTS_TRACEABILITY.md.
+Current status: M0–M7 and the post-M3 checkpoint are complete. Both controller-based hosts compose shared services, require one absolute SQLite file, initialize schema, validate compatible JWTs, and expose the specified auth/task endpoints. Auth.Api owns preserved demo seeding. Angular integrates both hosts with session restoration, scoped Bearer forwarding, guards/logout and responsive task CRUD using numeric status/calendar dates. M7 verified the full system, fixed long-username mobile overflow and untracked generated runtime artifacts. Submission/presentation (M8) remains. See M4_COMPLETION.md, M5_COMPLETION.md, M6_COMPLETION.md, M7_COMPLETION.md and REQUIREMENTS_TRACEABILITY.md.
 
 Implementation decisions should follow this priority:
 
@@ -1361,6 +1361,8 @@ Verify:
 Fix only actual defects or clearly valuable improvements.
 
 Do not add new product features.
+
+Completed in M7: full backend/frontend validation, real two-host HTTP/security checks and browser CRUD/session/recovery/desktop/mobile checks. Fixed valid long-username overflow and tracked local runtime artifacts; added three HTTP serialization boundary cases. See M7_COMPLETION.md for exact commands, results, observed corrections and environment limits. M8 was not started.
 
 ---
 

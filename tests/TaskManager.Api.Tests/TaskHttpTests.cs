@@ -99,6 +99,9 @@ public sealed class TaskHttpTests
     [InlineData("{\"title\":\"valid\"}")]
     [InlineData("{\"title\":\"valid\",\"dueDate\":null}")]
     [InlineData("{\"title\":\"valid\",\"dueDate\":\"not-a-date\"}")]
+    [InlineData("{\"title\":\"valid\",\"dueDate\":\"2026-02-29\"}")]
+    [InlineData("{\"title\":\"valid\",\"dueDate\":\"2026-10-03T00:00:00Z\"}")]
+    [InlineData("{\"title\":\"valid\",\"dueDate\":\"2026-10-03\",\"status\":\"Completed\"}")]
     [InlineData("{\"title\":\" \",\"dueDate\":\"2026-10-03\"}")]
     [InlineData("{\"title\":\"valid\",\"dueDate\":\"2026-10-03\",\"status\":99}")]
     public async Task Invalid_task_input_returns_400_without_mutation(string body)

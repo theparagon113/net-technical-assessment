@@ -2,7 +2,7 @@
 
 A personal task manager developed for a .NET full-stack technical assessment.
 
-M0–M6 and the post-M3 reconciliation checkpoint are complete. The backend has two independent controller-based ASP.NET Core hosts with authentication, task CRUD, shared SQLite persistence, and HTTP integration tests. Angular implements authentication and responsive task CRUD. Full-system hardening and the final submission/presentation remain incomplete.
+M0–M7 and the post-M3 reconciliation checkpoint are complete. The backend has two independent controller-based ASP.NET Core hosts with authentication, task CRUD, shared SQLite persistence, and HTTP integration tests. Angular implements authentication and responsive task CRUD. M7 verified the full system and fixed long-username mobile overflow and tracked runtime artifacts; see [M7 evidence](docs/M7_COMPLETION.md). Final submission/presentation remains M8.
 
 ## Stack and architecture
 
@@ -160,7 +160,7 @@ npm test -- --watch=false
 Remove-Item Env:M5_LIVE
 ```
 
-The live probe registers/logs in through Auth.Api, confirms `/me`, calls Task.Api's protected collection through the real interceptor, restores a new service from stored JWT, and verifies logout/route protection. The M5 probe remains test-only. See [M5 completion/evidence](docs/M5_COMPLETION.md) for exact results, browser checks and environment limitations. Task UI is complete in M6; final full-system hardening (M7), clean-clone review and presentation (M8) remain.
+The live probe registers/logs in through Auth.Api, confirms `/me`, calls Task.Api's protected collection through the real interceptor, restores a new service from stored JWT, and verifies logout/route protection. The M5 probe remains test-only. See [M5 completion/evidence](docs/M5_COMPLETION.md) for exact results, browser checks and environment limitations. Task UI is complete in M6 and full-system hardening in M7; clean-clone review and presentation remain M8.
 
 ## Angular task management (M6)
 
@@ -177,4 +177,4 @@ npm test -- --watch=false
 Remove-Item Env:M5_LIVE, Env:M6_LIVE
 ```
 
-The M6 probe registers/logs in, navigates through the real guard, creates/edits/reloads/deletes through TaskService, verifies all numeric statuses and calendar dates, and exercises a real 404 after concurrent deletion. It uses the existing interceptor without manually injecting JWT headers. See [M6 completion/evidence](docs/M6_COMPLETION.md) for file inventory, automated/browser results and review items.
+The M6 probe registers/logs in, navigates through the real guard, creates/edits/reloads/deletes through TaskService, verifies all numeric statuses and calendar dates, and exercises a real 404 after concurrent deletion. It uses the existing interceptor without manually injecting JWT headers. See [M6 completion/evidence](docs/M6_COMPLETION.md) for file inventory, automated/browser results and review items. M7 reran both probes and browser CRUD/session/recovery checks; current results are 194 backend cases, 50 regular Angular cases and two additional opt-in live cases. `.local/` runtime logs/data and `TestResults/` verification artifacts are ignored; do not commit them. The intentionally HTTP-only development profiles emit an HTTPS-redirection port warning; HTTPS profiles retain their configured HTTPS listeners.
