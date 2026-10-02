@@ -1,6 +1,6 @@
 using TaskManager.Domain;
 
-namespace TaskManager.Application;
+namespace TaskManager.Application.Tasks;
 
 public interface ITaskRepository
 {

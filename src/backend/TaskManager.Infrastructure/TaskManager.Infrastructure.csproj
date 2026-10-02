@@ -1,7 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.12" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.19.2" />
     <ProjectReference Include="..\TaskManager.Domain\TaskManager.Domain.csproj" />
     <ProjectReference Include="..\TaskManager.Application\TaskManager.Application.csproj" />
   </ItemGroup>

@@ -194,6 +194,8 @@ For this project, that structure is acceptable because the required application 
 
 # DEC-004 — Use Lightweight Clean Architecture
 
+> Reconciliation note: DEC-015 refines the API presentation boundary to two executable hosts. The original decision text below is retained.
+
 ## Status
 
 Accepted
@@ -337,6 +339,8 @@ That complexity is not present in the current assessment.
 ---
 
 # DEC-007 — Use JWT Bearer Authentication
+
+> Reconciliation note: DEC-015 supersedes the earlier single-host interpretation and defines compatible JWT validation across both hosts. JWT itself remains selected; historical text follows.
 
 ## Status
 
@@ -500,6 +504,163 @@ M2 alone does not provide a runnable seeded login. M3 must generate the demo has
 
 ---
 
+# DEC-012 — Definitive Username Identity (M3)
+
+## Status
+
+Accepted; supersedes DEC-011's temporary case-sensitive username behavior only.
+
+## Decision
+
+Trim username boundaries and compare identity with the centralized `UsernamePolicy.Compare`, using `StringComparer.OrdinalIgnoreCase`. Preserve trimmed original casing in User and authentication results. Application usernames allow 3–64 UTF-16 characters and exclude control characters. No accent folding or Unicode canonical normalization is applied; non-case-equivalent spellings remain distinct identities.
+
+Register the same comparison as SQLite `USERNAME_IDENTITY` on every factory-created connection. Add a unique index over `Username COLLATE USERNAME_IDENTITY`; lookup explicitly selects this collation too. Keep the existing case-sensitive unique constraint as a redundant compatibility constraint, avoiding a table rebuild and preserving user IDs, password hashes, task foreign keys, and display names.
+
+Initialization installs the index transactionally. Existing case/trim-equivalent identities cause an explicit initialization failure and rollback without selecting a winning account, deleting data, or changing passwords. A developer must resolve those collisions deliberately before retrying. Repository inserts translate SQLite unique violations into `DuplicateUsernameException`, so availability checks and insert races share the application outcome. The demo seeder ignores conflicts on either username constraint and preserves existing accounts in every casing.
+
+## Rationale and Trade-offs
+
+SQLite's built-in NOCASE handles ASCII case only. A custom collation shares exactly one comparison with the application, supports Unicode ordinal casing, and avoids duplicated normalized columns or an ASCII-only username restriction. See [Microsoft's collation documentation](https://learn.microsoft.com/en-us/dotnet/standard/data/sqlite/collation).
+
+External database tools must register the collation for username writes; without it SQLite rejects the operation. Do not change this collation's semantics on an existing database without an explicit migration/reindex and collision review. Length validation is an authentication rule, while the repository remains capable of reading existing M2 storage fixtures.
+
+---
+
+# DEC-013 — Authentication Cryptography and Limits (M3)
+
+## Status
+
+Accepted; refines DEC-007/DEC-008 and completes DEC-011's hashing deferral.
+
+## Decision
+
+Wrap the supported framework `PasswordHasher<object>` in Infrastructure, using IdentityV3 with PBKDF2-HMAC-SHA512 and 210,000 iterations, independent random salts, and supported verification. Accept 8–128 UTF-16 password characters; reject blank input and preserve all password whitespace. Avoid arbitrary character-class requirements. Malformed legacy hash data fails verification. No full Identity persistence system is introduced.
+
+Create access JWTs through Microsoft's `System.IdentityModel.Tokens.Jwt` package (8.19.2), rather than implementing signing/serialization manually. Infrastructure also references the existing ASP.NET shared framework for the password hasher/options; Application and Domain retain their original dependency boundaries.
+
+Require explicit issuer/audience and a locally configured Base64 random signing key containing at least 32 bytes. Sign HS256 tokens containing only stable integer `sub`, display `unique_name`, issuer, audience, not-before, and expiry. Default lifetime is 15 minutes, configurable from 1–60 minutes. Reject invalid configuration at construction and copy the validated values. There are no refresh tokens. Validation middleware and options binding remain M4 work.
+
+Authentication contracts redact password/access-token diagnostic strings. Invalid existing-user passwords and unknown usernames share one application exception/message; this does not promise constant-time lookup or equal timing for missing accounts. Registration duplicate errors intentionally report conflicts. Future deployment hardening such as rate limiting is outside this milestone.
+
+## Rationale and Trade-offs
+
+Framework hashing keeps crypto details outside business rules and provides supported adaptive salted verification. The explicit work factor is an assessment choice; deployed systems should measure hashing cost on their target hardware. Password hashes requesting framework rehash are accepted, but automatic hash upgrades are not introduced because the current repository has no update use case. JWT configuration stays outside Application/Domain; random test keys are ephemeral and no production/development signing secret is committed.
+
+The intentionally public local demo account is `demo / Demo123!`. Callers hash the password and pass only the generated hash into the existing transactional seeder. Startup composition is deferred. Existing demo credentials and edited/deleted tasks are preserved.
+
+---
+
+# DEC-014 — Organize Source by Cohesive Module Within Clean Architecture Layers
+
+## Status
+
+Accepted
+
+## Context
+
+The solution uses lightweight Clean Architecture with separate Domain, Application, Infrastructure, and API projects.
+
+As functionality grew through M1–M3, several projects accumulated unrelated source files directly at the project root. Although this does not affect compilation or architectural dependencies, it makes navigation harder and obscures the functional boundaries already present in the design.
+
+Introducing additional architectural patterns only to solve file organization would add unnecessary complexity.
+
+## Decision
+
+Keep the existing Clean Architecture boundaries and organize source files inside each layer by cohesive feature or technical capability.
+
+Application should primarily use feature-oriented modules, for example:
+
+- Authentication
+- Tasks
+- Users when the user-related surface becomes large enough to justify its own module
+
+Infrastructure should primarily use capability-oriented modules, for example:
+
+- Authentication
+- Persistence
+- Persistence/Repositories
+
+Domain may remain flat while it contains only a small number of closely related domain types.
+
+Namespaces should follow the physical folder structure.
+
+Do not create folders for trivial single types unless they represent a meaningful module boundary.
+
+Do not introduce CQRS, MediatR, Unit of Work, generic repositories, vertical slices, or other architectural patterns solely to organize files.
+
+## Rationale
+
+This keeps the codebase easy to navigate and review while preserving the simplicity of the existing architecture.
+
+Grouping related code makes functional boundaries visible without adding runtime complexity or unnecessary abstractions.
+
+It also provides a consistent convention for future milestones so new API, authentication, task, and persistence code does not accumulate in flat project roots.
+
+## Alternatives Considered
+
+### Keep project roots flat
+
+This is technically valid for very small projects but becomes harder to navigate as the number of related services, contracts, policies, exceptions, and persistence types grows.
+
+### Organize only by technical type
+
+Examples would include folders such as `Services`, `Interfaces`, `Models`, and `Exceptions`.
+
+This was not selected as the primary Application structure because it separates files that belong to the same feature and makes understanding a use case require navigating several unrelated directories.
+
+### Introduce a different architectural pattern
+
+Vertical slices, CQRS, or additional layers could also impose structure.
+
+They were not selected because the existing application complexity does not justify changing the architecture merely to improve file organization.
+
+## Trade-offs
+
+Some modules may initially contain only a few files.
+
+The exact folder structure may evolve as the application grows, but changes should preserve cohesive grouping and avoid unnecessary nesting.
+
+---
+
+# DEC-015 — Use Separate Task and Authentication API Hosts
+
+## Status
+
+Accepted — required correction after M3, before HTTP endpoint implementation. Refines DEC-004's singular API presentation wording and supersedes the single-host interpretation in DEC-007; JWT and no-refresh-token decisions remain valid.
+
+## Context
+
+The original assessment explicitly requires a SECOND API. The earlier AI-assisted single-host plan was incomplete. Human review rechecked the original assessment and identified the omission before M4 controllers/endpoints were implemented. Historical M0–M3 reports remain unchanged; the correction does not invalidate M1–M3 task, persistence, or authentication logic.
+
+## Decision
+
+Use two executable ASP.NET Core hosts in the same outer Clean Architecture presentation layer:
+
+- TaskManager.Api owns task CRUD HTTP endpoints and derives ownership from validated JWT claims.
+- TaskManager.Auth.Api owns registration/login plus explicit authorized current-user and non-authorized public endpoints.
+
+Both reuse the existing Domain/Application/Infrastructure projects and one Users/Tasks SQLite database; do not duplicate business logic or introduce microservice complexity. Use MVC/Web API controllers (AddControllers, MapControllers, [ApiController], ControllerBase, attribute routing), conservatively aligning with ASP.NET MVC/Web API wording. Angular remains the UI; no Razor views required.
+
+Auth.Api issues tokens through existing shared services. Both hosts accept tokens consistently with the same issuer, logical backend audience, externally supplied Base64 signing key, HS256 algorithm and validation rules (signature, issuer, audience, expiry, required signed/expiring tokens; planned zero clock skew and unmapped claims). No refresh tokens. Full binding/middleware remains M4A.
+
+M4 requires both composition roots to reject missing/relative SQLite file Data Source configuration and consume one externally supplied absolute path, independent of content/working roots. The factory currently has no host binding and remains usable by isolated SQLite tests. Both hosts may initialize the transactional/idempotent schema. Auth.Api alone seeds after initialization, hashing the existing public demo password through IPasswordHasher. Existing usernames/credentials and task edits/deletions remain preserved. Evaluators start Auth.Api first for demo population. Test repeated/concurrent host initialization in M4A.
+
+Angular will configure two base URLs. Auth.Api.Tests follows the existing dedicated host-test convention; both HTTP suites and cross-host token acceptance are M4 work.
+
+## Rationale
+
+This satisfies the explicit assessment requirement with the smallest structural correction. Canonical requirements and living traceability prevent architecture choices from silently overriding the assessment. A required absolute database path avoids per-host file creation from differing launch directories without redesigning persistence.
+
+## Alternatives Considered
+
+Two controllers in one host would retain the incomplete interpretation and were rejected by the developer's checkpoint instructions. Separate business layers/databases/microservice infrastructure add complexity without a requirement.
+
+## Trade-offs
+
+Evaluators eventually run two processes and supply identical database/JWT configuration to both; frontend CORS/configuration and integration tests must cover both hosts. Scaffold existence alone does not satisfy auth endpoints. The checkpoint adds structure/documentation only; M4 adds composition and HTTP behavior.
+
+---
+
 # Adding Future Decisions
 
 Use the following template:
@@ -535,3 +696,27 @@ What disadvantages or limitations were accepted?
 Only record meaningful decisions.
 
 Do not create a decision entry for every class, method, endpoint, or implementation detail.
+
+# DEC-016 — Shared M4 Host Composition and HTTP Contracts
+
+Accepted in M4; implements DEC-015 without changing the two-host architecture. Historical M0–M3/checkpoint reports remain unchanged.
+
+Compile the small `src/backend/SharedApi` presentation source set into both executable hosts using linked Compile items. It owns common composition, middleware, safe ProblemDetails translation and validated identity extraction. No extra runtime project/layer or host-to-host reference is introduced. Infrastructure/Authentication/JwtValidation owns the compatible JWT validation parameters and reuses M3 issuance configuration validation. Only Auth.Api registers authentication services/seeding; only Task.Api registers task services/repositories.
+
+Both hosts fail fast for invalid database/JWT configuration before creating storage, require an absolute file Data Source, deliberately create its parent directory and initialize schema. Auth.Api alone hashes/seeds demo data. One configured HTTP(S) CORS origin defaults to Angular's localhost:4200. Both hosts use unmapped claims, HS256, required signed/expiring tokens, zero skew, and one positive integer subject. Invalid/missing/duplicate subjects fail authentication with generic 401.
+
+Reuse safe Application AuthInput/AuthResult and TaskResult contracts. A thin API TaskRequest uses nullable/required dueDate to distinguish omitted/null HTTP input from a supplied DateOnly value, without changing M1 business date semantics. JSON uses camelCase (`dueDate` represents the assessment's `due_date`) and numeric statuses, 0/1/2. Task input has no UserId; unknown JSON/query ownership values cannot override claims. PUT returns 200 updated representation, DELETE 204, POST 201 with GET-by-ID Location. Registration returns 201 without inventing a user resource. ArgumentException maps to safe generic 400; missing/inaccessible tasks share 404; credentials share generic 401; duplicates 409; unexpected errors safe 500.
+
+Add Microsoft.AspNetCore.Authentication.JwtBearer 10.0.12 to the two hosts and Microsoft.AspNetCore.Mvc.Testing 10.0.12 to the two HTTP test projects, supporting required framework middleware and real HTTP testing. Cross-host tests reference both executable assemblies, exercise real registration/login/JWT/task requests, and use isolated absolute temporary databases and ephemeral keys. Test support is linked source, with early host configuration supplied before fail-fast composition. No ORM/mediator or production behavior bypass is added.
+
+Trade-off: linked presentation source must be included by both host project files; this is visible in the solution and avoids either duplicate policy or a new architectural project for three small common files. The two processes still require matching external configuration; no cross-process configuration negotiation is introduced. HTTP integration tests use TestServer, not browser/end-to-end validation.
+
+# DEC-017 — M5 Browser Session and Two-API Integration
+
+Accepted in M5; implements the existing assessment sessionStorage trade-off.
+
+Keep two public base URLs in a small injectable Angular configuration. Use one signal-based AuthService and a shared login/registration form component. Both existing backend operations return safe identity plus JWT, so both establish the returned session directly; registration makes no hidden login call. Persist only the JWT in sessionStorage; restore safe identity via `/me` before guards allow protected navigation. JWT payload parsing checks expiration for UX only; the backend verifies cryptography and authorization. No refresh tokens or duplicate global store.
+
+Scope the functional interceptor to exact configured origins and `/api/auth/me` or `/api/tasks` path boundaries. Login/register/public/assets/third-party requests receive no JWT. Protected 401s invalidate the matching session once, while late failures from an older token cannot clear a newer session. Expiration clears state too; logout's returned navigation promise lets callers await route completion. Requests time out after ten seconds. Restoration failures clear state conservatively. Keep the task-host live probe in an opt-in test, without production task UI.
+
+Trade-offs: JavaScript/XSS can access sessionStorage; its lifetime is shorter than localStorage. Production could use secure HttpOnly cookies/BFF. Forms supply UX validation matching current .NET UTF-16 length/whitespace rules, while backend validation and ownership remain authoritative. One reusable component is sufficient for the two closely related forms, without a UI framework or general error infrastructure.

@@ -1,6 +1,6 @@
 namespace TaskManager.Domain;
 
-// Persistence data only; hashing and authentication belong to the next milestone.
+// PasswordHash is opaque persistence data; authentication stays outside Domain.
 public sealed class User
 {
     public int Id { get; }

@@ -1,7 +1,9 @@
 using System.Globalization;
 using Microsoft.Data.Sqlite;
 using TaskManager.Domain;
-using TaskManager.Infrastructure;
+using TaskManager.Infrastructure.Persistence;
+using TaskManager.Infrastructure.Persistence.Repositories;
+using TaskManager.Application.Authentication;
 using TaskStatus = TaskManager.Domain.TaskStatus;
 
 namespace TaskManager.Infrastructure.Tests;
@@ -52,8 +54,7 @@ public sealed class SqlitePersistenceTests : IDisposable
     {
         await database.Initializer.InitializeAsync();
         var original = await AddUser();
-        var error = await Assert.ThrowsAsync<SqliteException>(() => AddUser());
-        Assert.Equal(2067, error.SqliteExtendedErrorCode);
+        await Assert.ThrowsAsync<DuplicateUsernameException>(() => AddUser());
         Assert.Equal(original.Id, (await database.Users.GetByUsernameAsync("owner", Token))!.Id);
     }
 

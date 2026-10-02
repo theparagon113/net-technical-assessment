@@ -9,14 +9,20 @@
 
 # 1. Source of Truth
 
+Current status: M0–M5 and the post-M3 checkpoint are complete. Both controller-based hosts compose shared services, require one absolute SQLite file, initialize schema, validate compatible JWTs, and expose the specified auth/task endpoints. Auth.Api owns preserved demo seeding. Angular authentication now integrates both hosts, with session restoration, scoped Bearer forwarding, guards and logout. Task UI (M6), final full-system checks (M7) and submission/presentation (M8) remain. See M4_COMPLETION.md, M5_COMPLETION.md and REQUIREMENTS_TRACEABILITY.md.
+
 Implementation decisions should follow this priority:
 
-1. Requirements in the provided technical assessment.
+1. Original assessment requirements, canonically transcribed in `docs/ASSESSMENT_REQUIREMENTS.md`.
 2. This project definition.
-3. The current milestone specification.
-4. Implementation details chosen during development.
+3. `docs/USER_STORY.md`.
+4. `docs/DECISIONS.md`.
+5. The current milestone specification.
+6. Implementation convenience.
 
 If a coding agent proposes something that conflicts with a higher level, the higher-level requirement wins.
+
+The external PDF remains authoritative. REQUIREMENTS_TRACEABILITY.md records status without overriding requirements; check and update applicable rows before milestone completion. The reconciliation checkpoint corrects the earlier single-host omission without rewriting M0–M3 history. Full assessment requirements and evaluation criteria are in ASSESSMENT_REQUIREMENTS.md.
 
 The assessment explicitly requires:
 
@@ -26,7 +32,7 @@ The assessment explicitly requires:
 - Clean Architecture principles.
 - TDD methodology.
 - CRUD functionality.
-- User creation and login.
+- A SECOND API for user creation, login, authorized behavior, and non-authorized behavior.
 - Authorized and non-authorized API behavior.
 - Separate data and business logic layers.
 - Unit testing of data access, business logic, and API endpoints.
@@ -82,7 +88,8 @@ This domain intentionally mirrors the task-management example included in the Ge
 - JWT generation.
 - JWT Bearer authentication.
 - Protected API routes.
-- Anonymous registration and login routes.
+- Anonymous registration and login routes on TaskManager.Auth.Api.
+- Explicit anonymous public and protected current-user endpoints on TaskManager.Auth.Api.
 - Current-user identification from JWT claims.
 - Logout on the frontend.
 
@@ -245,52 +252,29 @@ A future SQL Server/PostgreSQL implementation should be possible by creating new
 
 # 6. Architecture
 
-Use a lightweight Clean Architecture:
+Use a lightweight Clean Architecture with two separate executable ASP.NET Core API hosts in the same outer presentation layer:
 
 ```text
-                    ┌───────────────────┐
-                    │      Angular      │
-                    └─────────┬─────────┘
-                              │ HTTP
-                              ▼
-                    ┌───────────────────┐
-                    │        API        │
-                    │ Controllers/Auth  │
-                    └─────────┬─────────┘
-                              │
-                              ▼
-                    ┌───────────────────┐
-                    │    Application    │
-                    │ Services / Ports  │
-                    └───────┬───────────┘
-                            │
-                   abstractions
-                            │
-             ┌──────────────┴──────────────┐
-             ▼                             ▼
-     ITaskRepository                IUserRepository
-             ▲                             ▲
-             │                             │
-             └──────────────┬──────────────┘
-                            │
-                    ┌───────┴─────────┐
-                    │ Infrastructure  │
-                    │ SQLite / JWT /  │
-                    │ password hash   │
-                    └─────────────────┘
+TaskManager.Domain
+        ↑
+TaskManager.Application
+        ↑
+TaskManager.Infrastructure
+        ↑
+        ├── TaskManager.Api       (task CRUD)
+        └── TaskManager.Auth.Api  (registration/login/public/current user)
+
+Angular
+   ├── auth API base URL → TaskManager.Auth.Api → issues JWT
+   └── task API base URL → TaskManager.Api      → validates JWT
+                          TaskManager.Auth.Api also validates JWT for /me
 ```
 
-Dependencies flow inward.
+Dependencies flow inward: Application depends on Domain; Infrastructure depends on Application and Domain; both API hosts compose shared services/repositories and translate HTTP. Domain has no application-specific dependencies. Business rules remain independent of HTTP and SQLite.
 
-Infrastructure can depend on Application and Domain.
+TaskManager.Api owns task CRUD only, derives owner identity from validated token claims, and never trusts frontend UserId. TaskManager.Auth.Api owns registration, login, an explicit anonymous/public endpoint, and a protected endpoint returning safe current-user information. Do not duplicate Domain, Application, Infrastructure, or business/token-generation logic. Both hosts use one shared SQLite database; no microservice infrastructure, separate databases, brokers, or distributed transactions.
 
-Application can depend on Domain.
-
-Domain depends on nothing application-specific.
-
-API performs composition and HTTP translation but does not contain business rules.
-
-This directly supports the assessment requirement that business logic remain independent of both the API and data layer.
+Both use ASP.NET Core's MVC/Web API controller pipeline: `AddControllers()`, `MapControllers()`, `[ApiController]`, `ControllerBase`, attribute routing. This conservatively aligns with "ASP.NET MVC, Web API" while Angular remains the UI. No Minimal APIs for primary assessment endpoints; no Razor/server-rendered UI is required. DEC-015 records the correction to DEC-004/007.
 
 ---
 
@@ -304,7 +288,8 @@ technical-assessment/
 │   │   ├── TaskManager.Domain/
 │   │   ├── TaskManager.Application/
 │   │   ├── TaskManager.Infrastructure/
-│   │   └── TaskManager.Api/
+│   │   ├── TaskManager.Api/
+│   │   └── TaskManager.Auth.Api/
 │   │
 │   └── frontend/
 │       └── task-manager-web/
@@ -312,9 +297,12 @@ technical-assessment/
 ├── tests/
 │   ├── TaskManager.Application.Tests/
 │   ├── TaskManager.Infrastructure.Tests/
-│   └── TaskManager.Api.Tests/
+│   ├── TaskManager.Api.Tests/
+│   └── TaskManager.Auth.Api.Tests/
 │
 ├── docs/
+│   ├── ASSESSMENT_REQUIREMENTS.md
+│   ├── REQUIREMENTS_TRACEABILITY.md
 │   └── GENAI.md
 │
 ├── TaskManager.sln
@@ -407,7 +395,9 @@ Dates are represented consistently and converted explicitly between SQLite and .
 
 Foreign-key enforcement must be enabled.
 
-Database initialization should be deterministic and automatic for local development.
+Database initialization is transactional and idempotent; M4A startup composition is implemented. Both hosts ensure schema initialization. Auth.Api alone hashes the demo password and invokes SqliteDemoSeeder after initialization. Reruns preserve existing credentials and task edits/deletions, including existing demo usernames in any casing; deleted demo tasks are not restored.
+
+Both M4 composition roots read `ConnectionStrings:TaskManager` (`ConnectionStrings__TaskManager`) and reject missing or relative file Data Source values. Require an externally supplied absolute path to the same SQLite file, never resolve against either host's working/content root and never silently fall back to a local relative file. Create its containing directory first. The existing factory accepts caller-supplied strings; both hosts now bind the validated common connection string. Isolated caller/test in-memory configurations remain supported. No persistence redesign was needed for M4. M4 tests prove both hosts use the same file with different content roots and repeated/concurrent startup initialization. Start Auth.Api first for evaluator demo seeding; Task.Api can start first but will not seed the demo account.
 
 ---
 
@@ -473,7 +463,7 @@ Infrastructure supplies implementations.
 
 ---
 
-# 12. Authentication Design
+# 12. Authentication Design (implemented HTTP behavior: TaskManager.Auth.Api)
 
 ## Registration
 
@@ -497,7 +487,7 @@ Persist user
 Return created user information
 ```
 
-Never return `PasswordHash`.
+Register returns 201 with safe identity/token result; validation returns 400 and duplicate username returns deterministic 409. Never return `PasswordHash`.
 
 ---
 
@@ -531,6 +521,10 @@ with a generic message.
 
 ---
 
+## Explicit Public Endpoint
+
+`GET /api/auth/public` returns 200 without JWT and exposes only safe public API information. Registration and login are also anonymous. This explicit endpoint fulfills non-authorized behavior separately from the protected current-user endpoint.
+
 ## Current User
 
 ```text
@@ -539,7 +533,7 @@ GET /api/auth/me
 
 Requires authentication.
 
-Returns information derived from the authenticated identity.
+Returns safe user ID/display username derived from the validated identity: 200 with valid JWT, 401 without a valid JWT. Never return passwords, hashes, or a token from this endpoint.
 
 ---
 
@@ -549,7 +543,7 @@ JWT contains only information required to identify the user, such as:
 
 ```text
 sub
-name
+unique_name
 ```
 
 Configuration validates:
@@ -560,15 +554,17 @@ Configuration validates:
 - lifetime;
 - signature.
 
-Use a reasonable short lifetime such as approximately one hour.
+Preserve M3/DEC-013: HS256; default lifetime 15 minutes, configurable 1–60; Base64 random signing key of at least 32 bytes. Auth.Api issues JWT through AuthService/JwtTokenService. Both hosts validate the same issuer, one logical backend audience, signing key, HS256 algorithm, signature and expiry. Require signed tokens/expiration; reject wrong key/issuer/audience/algorithm and expired tokens. Set matching zero clock skew and disable inbound claim remapping so positive integer `sub` is extracted consistently. Reject invalid identity claims rather than trusting request ownership fields. Validation policy is shared in Infrastructure/Authentication/JwtValidation; do not duplicate token generation or business rules.
+
+Supply secrets locally via a common inherited environment (README preparation example) or configure identical secrets for both hosts. Never commit a signing key. Lifetime/configuration validation must fail clearly at startup in M4A. M4 now configures and tests this JWT pipeline in both hosts.
 
 No refresh-token implementation.
 
 ---
 
-# 13. Task API
+# 13. Task API (implemented HTTP behavior: TaskManager.Api)
 
-All task endpoints require authentication.
+All task endpoints require authentication; missing/invalid JWT returns 401, invalid input 400, and missing/inaccessible tasks 404. Updates consistently return 200 with the updated representation; deletes return 204. POST returns 201 with Location/CreatedAtAction where practical. Controllers only translate requests/results/errors, preserving inner business rules.
 
 ## List tasks
 
@@ -767,6 +763,8 @@ The assessment explicitly requests seeded data / credentials for demonstration p
 
 # 18. Angular Application
 
+Configure TWO backend base URLs: auth API for registration/login/public/current-user calls; task API for task CRUD. Scope the interceptor to these configured backend origins/paths. Both hosts allow the documented Angular origin through CORS in M4A; frontend integration remains M5/M6.
+
 ## Routes
 
 Minimum:
@@ -927,27 +925,13 @@ The purpose is to validate actual SQL and mapping.
 
 # 23. API Tests
 
-Use ASP.NET Core integration testing such as `WebApplicationFactory`.
+Use real ASP.NET Core HTTP-pipeline integration tests (`WebApplicationFactory` or equivalent) in TaskManager.Api.Tests and TaskManager.Auth.Api.Tests. Keep Application unit tests and real SQLite Infrastructure tests. Thin controllers do not need redundant direct unit tests to inflate counts.
 
-Test representative HTTP behavior:
+Task API: all CRUD verbs, collection/by-ID success, validation/status codes, unauthenticated rejection, authenticated success, user isolation on reads/updates/deletes, identical missing/inaccessible 404, POST 201 Location, PUT 200, DELETE 204.
 
-```text
-POST /auth/register        → 201
-POST /auth/login           → 200
-invalid login              → 401
-GET /auth/me anonymous     → 401
-GET /auth/me authenticated → 200
+Auth API: registration 201, duplicate 409 (including casing/race mapping), login 200, generic invalid-credentials 401, public anonymous 200, protected /me 401 without/with invalid JWT and 200 with valid JWT; wrong key/issuer/audience/algorithm and expired tokens; model-binding/validation 400. Never expose password hashes.
 
-GET /tasks anonymous       → 401
-POST /tasks                → 201
-GET /tasks                 → 200
-PUT /tasks/{id}            → 200
-DELETE /tasks/{id}         → 204
-missing task               → 404
-invalid request            → 400
-```
-
-Also prove cross-user isolation with at least one API integration test.
+Cross-host: a token obtained over HTTP from TaskManager.Auth.Api is accepted by TaskManager.Api under shared test issuer/audience/key. Test shared database path enforcement with distinct host content roots and initialization/seed preservation on reruns. Use isolated databases/ephemeral keys. Add behavior tests first where practical and record actual red/green evidence.
 
 ---
 
@@ -1278,28 +1262,37 @@ Add security-oriented tests.
 
 ---
 
-## M4 — Web API
+## Reconciliation checkpoint — between M3 and M4
 
-Implement controllers:
+Human requirement review found the initial AI-assisted plan omitted the explicit SECOND API requirement. Correct the canonical sources/traceability/architecture and add Auth.Api/Auth.Api.Tests scaffolds; no controllers, JWT middleware, composition, or frontend features. Preserve historical M0–M3 reports. Existing business/persistence/auth services remain valid; M0's host count was incomplete and is corrected here. See RECONCILIATION_COMPLETION.md.
 
-```text
-/api/auth
-/api/tasks
-```
+## M4 — Two-host controller-based Web APIs
 
-Configure:
+### M4A — Shared API foundation / composition
 
-- JWT Bearer.
-- authorization.
-- ProblemDetails/error handling.
-- CORS.
-- dependency injection.
+- Controller-based setup in both hosts, DI for existing services/repositories.
+- Required identical absolute shared SQLite file configuration, initialization in both hosts, demo seeding only in Auth.Api.
+- Compatible JWT validation in both hosts, one backend audience, shared issuer/key/rules, claim extraction policy.
+- ProblemDetails/error mapping, Angular-origin CORS, configuration/startup validation.
+- Foundation tests, including differing content roots, shared database and idempotent startup.
 
-Add API integration tests.
+### M4B — Authentication API (TaskManager.Auth.Api)
 
-Prove user isolation.
+- POST /api/auth/register; POST /api/auth/login.
+- GET /api/auth/public (explicit anonymous); GET /api/auth/me (explicit protected).
+- 201/409/200/401/400 semantics, generic login failures, duplicate mapping, safe results.
+- Real HTTP-pipeline tests in TaskManager.Auth.Api.Tests; token validation cases.
 
-At this point the backend should satisfy all functional backend requirements.
+### M4C — Task CRUD API (TaskManager.Api)
+
+- GET collection; GET by ID; POST; PUT (200 updated result); DELETE.
+- JWT authentication, validated positive integer current-user claim, owner-aware service calls.
+- Validation/error mapping; identical missing/inaccessible 404; 201 Location and 204 deletion.
+- Real HTTP-pipeline tests in TaskManager.Api.Tests, all CRUD verbs and cross-user isolation.
+- Cross-host test: Auth.Api-issued JWT accepted by TaskManager.Api using shared test configuration.
+- Record actual REST API prompt/output and HTTP validation evidence in GENAI.md; do not fabricate TDD chronology.
+
+M4A/B/C are implemented and tested; see M4_COMPLETION.md for results and REQUIREMENTS_TRACEABILITY.md for the updated requirement audit. M5 results are recorded separately in M5_COMPLETION.md.
 
 ---
 
@@ -1316,11 +1309,15 @@ Implement:
 - logout;
 - responsive authentication UI.
 
-Validate against live backend.
+Configure separate auth/task API base URLs; authentication calls target Auth.Api. Validate against both live backend hosts, including token forwarding to Task.Api.
+
+Implemented in M5: login/registration both consume M4's identity/token result, sessionStorage JWT only, authoritative `/me` restoration, guarded `/tasks` placeholder and logout, restricted interceptor and safe form errors. Automated unit/router and opt-in live two-host tests plus browser registration/login/refresh/logout evidence are recorded in M5_COMPLETION.md. No M6 task UI was added.
 
 ---
 
 ## M6 — Angular Task CRUD
+
+Task service uses the task API base URL; auth/session service uses the auth API base URL.
 
 Implement:
 
@@ -1377,6 +1374,7 @@ Complete:
 - test instructions.
 - GenAI documentation.
 - relevant assumptions.
+- complete requirements traceability and presentation/rehearsal, including the user story, two APIs, testing, GenAI prompt/output/corrections, and live functionality demo.
 - design decisions.
 
 Perform clean-clone style validation.
@@ -1431,6 +1429,7 @@ docs/GENAI.md
 
 The project is functionally complete when all of these are true:
 
+- Two separate API hosts expose their assigned controller endpoints, including explicit public and protected auth behavior.
 - New user can register.
 - User can log in.
 - Password is stored hashed.
@@ -1472,7 +1471,7 @@ The project is ready for submission only when a clean reviewer can reasonably:
 ```text
 clone
 configure documented local secret
-run backend
+run both backend API hosts against one database and shared JWT configuration
 run frontend
 log in with demo credentials
 perform full CRUD
@@ -1513,6 +1512,10 @@ Because repositories model application persistence requirements. A generic repos
 ### Why TaskService rather than CQRS handlers?
 
 The current domain complexity does not justify CQRS. A focused application service provides clear boundaries with much less ceremony.
+
+### Why two APIs?
+
+The assessment explicitly requires a second API. Two executable hosts share the same inner layers/database; this is a presentation-layer split. Human review corrected the initial single-host omission before endpoints were implemented.
 
 ### Why JWT?
 

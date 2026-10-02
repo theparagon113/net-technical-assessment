@@ -1,4 +1,5 @@
-using TaskManager.Infrastructure;
+using TaskManager.Infrastructure.Persistence;
+using TaskManager.Infrastructure.Persistence.Repositories;
 
 namespace TaskManager.Infrastructure.Tests;
 

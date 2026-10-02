@@ -1,9 +1,11 @@
 using Microsoft.Data.Sqlite;
+using TaskManager.Application.Authentication;
 
-namespace TaskManager.Infrastructure;
+namespace TaskManager.Infrastructure.Persistence;
 
 public sealed class SqliteConnectionFactory
 {
+    public const string UsernameCollation = "USERNAME_IDENTITY";
     private readonly string connectionString;
 
     public SqliteConnectionFactory(string connectionString)
@@ -22,6 +24,7 @@ public sealed class SqliteConnectionFactory
         try
         {
             await connection.OpenAsync(cancellationToken);
+            connection.CreateCollation(UsernameCollation, UsernamePolicy.Compare);
             return connection;
         }
         catch

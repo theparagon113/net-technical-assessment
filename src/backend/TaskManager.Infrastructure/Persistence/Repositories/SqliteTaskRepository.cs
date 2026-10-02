@@ -1,10 +1,10 @@
-using TaskManager.Application;
+using TaskManager.Application.Tasks;
 using TaskManager.Domain;
 using System.Globalization;
 using Microsoft.Data.Sqlite;
 using TaskStatus = TaskManager.Domain.TaskStatus;
 
-namespace TaskManager.Infrastructure;
+namespace TaskManager.Infrastructure.Persistence.Repositories;
 
 public sealed class SqliteTaskRepository(SqliteConnectionFactory connections) : ITaskRepository
 {

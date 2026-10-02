@@ -1,4 +1,6 @@
-namespace TaskManager.Infrastructure;
+using Microsoft.Data.Sqlite;
+
+namespace TaskManager.Infrastructure.Persistence;
 
 public sealed class SqliteDatabaseInitializer(SqliteConnectionFactory connections)
 {
@@ -14,6 +16,8 @@ public sealed class SqliteDatabaseInitializer(SqliteConnectionFactory connection
                 Username TEXT NOT NULL UNIQUE,
                 PasswordHash TEXT NOT NULL
             );
+            CREATE UNIQUE INDEX IF NOT EXISTS IX_Users_UsernameIdentity
+                ON Users (Username COLLATE USERNAME_IDENTITY);
             CREATE TABLE IF NOT EXISTS Tasks (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 UserId INTEGER NOT NULL,
@@ -24,7 +28,15 @@ public sealed class SqliteDatabaseInitializer(SqliteConnectionFactory connection
                 FOREIGN KEY (UserId) REFERENCES Users(Id)
             );
             """;
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        try
+        {
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+        catch (SqliteException error) when (error.SqliteExtendedErrorCode == 2067)
+        {
+            throw new InvalidOperationException(
+                "Existing usernames conflict under M3 identity rules. Resolve account collisions before retrying initialization; no accounts were changed.", error);
+        }
         await transaction.CommitAsync(cancellationToken);
     }
 }

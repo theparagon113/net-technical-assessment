@@ -18,3 +18,7 @@ As a registered user, I want to securely manage my personal tasks so that I can 
 - An unauthenticated user cannot access protected task endpoints.
 - One user cannot access or modify another user's tasks.
 - Invalid task data is rejected with an appropriate validation response.
+- Registration, login, and safe public information are available anonymously.
+- After authentication, a user can access protected current-user information; invalid or missing authentication cannot access it.
+
+These criteria describe user behavior; two-host routing is an architecture responsibility documented in PROJECT_DEFINITION.md. M4 implements and tests the HTTP acceptance criteria. M5 implements frontend registration/login, same-tab session restoration and logout; `/tasks` is a protected placeholder. User-facing task CRUD remains M6.

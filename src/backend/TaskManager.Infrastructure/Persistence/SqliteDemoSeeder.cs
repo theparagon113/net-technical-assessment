@@ -1,8 +1,10 @@
-namespace TaskManager.Infrastructure;
+namespace TaskManager.Infrastructure.Persistence;
 
 public sealed class SqliteDemoSeeder(SqliteConnectionFactory connections)
 {
-    // M3 must supply a framework-generated hash before this can be used locally.
+    // Local assessment credentials only; callers generate the hash through IPasswordHasher.
+    public const string Username = "demo";
+    public const string Password = "Demo123!";
     public async Task SeedAsync(string passwordHash, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(passwordHash);
@@ -12,10 +14,10 @@ public sealed class SqliteDemoSeeder(SqliteConnectionFactory connections)
         userCommand.Transaction = transaction;
         userCommand.CommandText = """
             INSERT INTO Users (Username, PasswordHash) VALUES (@username, @passwordHash)
-            ON CONFLICT(Username) DO NOTHING
+            ON CONFLICT DO NOTHING
             RETURNING Id;
             """;
-        userCommand.Parameters.AddWithValue("@username", "demo");
+        userCommand.Parameters.AddWithValue("@username", Username);
         userCommand.Parameters.AddWithValue("@passwordHash", passwordHash);
         var id = await userCommand.ExecuteScalarAsync(cancellationToken);
 

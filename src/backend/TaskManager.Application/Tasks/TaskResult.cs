@@ -1,7 +1,7 @@
 using TaskManager.Domain;
 using TaskStatus = TaskManager.Domain.TaskStatus;
 
-namespace TaskManager.Application;
+namespace TaskManager.Application.Tasks;
 
 public sealed record TaskResult(int Id, int UserId, string Title, string? Description,
     TaskStatus Status, DateOnly DueDate)

@@ -12,23 +12,29 @@ Agents must prioritize correctness, clarity, security, testability, and scope co
 
 # Sources of Truth
 
-Before making changes, read the following files:
+Before planning or implementing a milestone, read:
 
-1. `docs/PROJECT_DEFINITION.md`
-2. `docs/USER_STORY.md`
-3. `docs/DECISIONS.md`
-4. The current milestone prompt provided by the developer
+1. `docs/ASSESSMENT_REQUIREMENTS.md`
+2. `docs/PROJECT_DEFINITION.md`
+3. `docs/USER_STORY.md`
+4. `docs/DECISIONS.md`
+5. `docs/REQUIREMENTS_TRACEABILITY.md`
+6. The current milestone instructions
 
-When requirements conflict, use this priority:
+The original external assessment overrides all repository design decisions. `docs/ASSESSMENT_REQUIREMENTS.md` is the repository's canonical transcription of those external requirements. The original PDF remains authoritative; do not require copying or committing it. `docs/REQUIREMENTS_TRACEABILITY.md` records implementation status and does not override requirements.
 
-1. Technical assessment requirements
+Conflict priority:
+
+1. Original technical assessment requirements (canonical repository transcription above)
 2. `docs/PROJECT_DEFINITION.md`
 3. `docs/USER_STORY.md`
 4. `docs/DECISIONS.md`
 5. Current milestone instructions
 6. Implementation convenience
 
-Do not override a higher-priority requirement without explicit developer approval.
+Do not override a higher-priority requirement without explicit developer approval. Ambiguous wording such as "second", "additional", "separate", or "authorized" must not be collapsed into a simpler interpretation without explicit developer approval. If an existing decision conflicts with the assessment, stop following the stale decision, report the conflict, and correct it within authorized scope; otherwise obtain developer direction.
+
+A milestone may not be declared complete until applicable assessment requirements are checked against the traceability matrix. Update traceability when milestone status changes. Historical completion reports must not be rewritten to pretend a corrected interpretation existed earlier.
 
 ---
 
@@ -62,7 +68,8 @@ Application
   ↑
 Infrastructure
   ↑
-API
+  ├── TaskManager.Api
+  └── TaskManager.Auth.Api
 ```
 
 More precisely:
@@ -76,6 +83,41 @@ More precisely:
 - Frontend must communicate with the backend only through documented HTTP APIs.
 
 Do not create additional architectural layers unless there is a demonstrated requirement.
+
+---
+
+
+## Two API hosts
+
+The outer presentation/API layer consists of TWO separate executable ASP.NET Core hosts:
+
+1. `TaskManager.Api`: task/data CRUD only, protected by JWT; ownership derives from validated claims, never frontend UserId.
+2. `TaskManager.Auth.Api`: registration, login, the explicit authorized current-user endpoint, and the explicit non-authorized public endpoint.
+
+Both reuse the same Domain/Application/Infrastructure boundaries and one shared SQLite database. Do not duplicate business logic, inner projects, databases, or token generation. Both use the MVC/Web API controller pipeline: AddControllers, MapControllers, [ApiController], ControllerBase, and attribute routing. Do not implement primary assessment endpoints as Minimal APIs or add Razor views without an actual requirement.
+
+Both validate JWTs with the same issuer, logical backend audience, signing key, and validation rules; Auth.Api issues tokens through existing shared services. Signing secrets stay outside source control. M4 composition must require one externally configured absolute SQLite Data Source for both hosts, independent of working/content root. Both may initialize the idempotent schema; Auth.Api alone owns demo seeding, preserving existing credentials/task edits/deletions. Angular requires separate auth/task API base URLs.
+
+## Source organization
+
+Preserve the existing lightweight Clean Architecture boundaries.
+
+Within each architectural layer, organize source files by cohesive feature or technical capability rather than allowing project roots to become flat mixed-purpose directories.
+
+Guidelines:
+
+- Application should prefer feature-oriented grouping, such as `Authentication` and `Tasks`.
+- Infrastructure should prefer capability-oriented grouping, such as `Authentication` and `Persistence`.
+- Persistence-specific repository implementations may live under `Persistence/Repositories`.
+- Domain may remain flat while the number of domain types is small.
+- Keep namespaces aligned with folder structure.
+- Avoid folders that contain only a trivial single type unless they represent a meaningful module boundary.
+- Do not introduce new architectural patterns or abstractions solely to justify folder structure.
+- Physical organization must improve navigability without changing architectural dependencies or behavior.
+
+When adding new functionality, place it in the existing cohesive module whenever one already exists instead of adding unrelated files to the project root.
+
+Before completing a milestone, inspect the affected project tree and avoid leaving multiple related source files scattered at the project root when a clear cohesive module already exists.
 
 ---
 
@@ -255,7 +297,7 @@ Use isolated temporary or in-memory databases as appropriate.
 
 Prefer real ASP.NET Core integration tests through the application's HTTP pipeline.
 
-Test authentication, authorization, validation, HTTP status codes, and user isolation.
+Test authentication, authorization, validation, HTTP status codes, and user isolation in both hosts. Prove that an Auth.Api-issued JWT is accepted by TaskManager.Api under shared test configuration. Preserve Application unit tests and real SQLite Infrastructure tests; do not inflate coverage with redundant direct tests of thin controllers.
 
 ---
 

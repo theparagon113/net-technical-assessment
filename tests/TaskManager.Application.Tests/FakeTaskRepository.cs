@@ -1,4 +1,4 @@
-using TaskManager.Application;
+using TaskManager.Application.Tasks;
 using TaskManager.Domain;
 
 namespace TaskManager.Application.Tests;

@@ -1,8 +1,9 @@
-using TaskManager.Application;
+using TaskManager.Application.Authentication;
+using TaskManager.Application.Users;
 using TaskManager.Domain;
 using Microsoft.Data.Sqlite;
 
-namespace TaskManager.Infrastructure;
+namespace TaskManager.Infrastructure.Persistence.Repositories;
 
 public sealed class SqliteUserRepository(SqliteConnectionFactory connections) : IUserRepository
 {
@@ -19,8 +20,15 @@ public sealed class SqliteUserRepository(SqliteConnectionFactory connections) : 
             """;
         command.Parameters.AddWithValue("@username", user.Username);
         command.Parameters.AddWithValue("@passwordHash", user.PasswordHash);
-        var id = checked((int)(long)(await command.ExecuteScalarAsync(cancellationToken))!);
-        return new User(id, user.Username, user.PasswordHash);
+        try
+        {
+            var id = checked((int)(long)(await command.ExecuteScalarAsync(cancellationToken))!);
+            return new User(id, user.Username, user.PasswordHash);
+        }
+        catch (SqliteException error) when (error.SqliteExtendedErrorCode == 2067)
+        {
+            throw new DuplicateUsernameException();
+        }
     }
 
     public async Task<User?> GetByIdAsync(int userId, CancellationToken cancellationToken)
@@ -38,7 +46,7 @@ public sealed class SqliteUserRepository(SqliteConnectionFactory connections) : 
         ArgumentException.ThrowIfNullOrWhiteSpace(username);
         await using var connection = await connections.OpenAsync(cancellationToken);
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT Id, Username, PasswordHash FROM Users WHERE Username = @username;";
+        command.CommandText = "SELECT Id, Username, PasswordHash FROM Users WHERE Username COLLATE USERNAME_IDENTITY = @username;";
         command.Parameters.AddWithValue("@username", username.Trim());
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         return await reader.ReadAsync(cancellationToken) ? Map(reader) : null;

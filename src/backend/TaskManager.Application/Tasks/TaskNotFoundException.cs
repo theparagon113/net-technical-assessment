@@ -1,4 +1,4 @@
-namespace TaskManager.Application;
+namespace TaskManager.Application.Tasks;
 
 public sealed class TaskNotFoundException : Exception
 {

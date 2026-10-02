@@ -1,4 +1,4 @@
-using TaskManager.Application;
+using TaskManager.Application.Tasks;
 using TaskStatus = TaskManager.Domain.TaskStatus;
 
 namespace TaskManager.Application.Tests;
