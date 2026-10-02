@@ -7,6 +7,9 @@ TestResults/
 *.db
 *.db-*
 
+# Disposable M6 validation logs, process metadata and browser screenshots
+/.local/m6-*
+
 # Angular / Node
 node_modules/
 dist/

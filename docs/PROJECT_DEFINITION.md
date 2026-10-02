@@ -9,7 +9,7 @@
 
 # 1. Source of Truth
 
-Current status: M0–M5 and the post-M3 checkpoint are complete. Both controller-based hosts compose shared services, require one absolute SQLite file, initialize schema, validate compatible JWTs, and expose the specified auth/task endpoints. Auth.Api owns preserved demo seeding. Angular authentication now integrates both hosts, with session restoration, scoped Bearer forwarding, guards and logout. Task UI (M6), final full-system checks (M7) and submission/presentation (M8) remain. See M4_COMPLETION.md, M5_COMPLETION.md and REQUIREMENTS_TRACEABILITY.md.
+Current status: M0–M6 and the post-M3 checkpoint are complete. Both controller-based hosts compose shared services, require one absolute SQLite file, initialize schema, validate compatible JWTs, and expose the specified auth/task endpoints. Auth.Api owns preserved demo seeding. Angular authentication now integrates both hosts, with session restoration, scoped Bearer forwarding, guards and logout. M6 adds responsive task list/forms/confirmed deletion with numeric status and calendar-date mappings. Final full-system checks (M7) and submission/presentation (M8) remain. See M4_COMPLETION.md, M5_COMPLETION.md, M6_COMPLETION.md and REQUIREMENTS_TRACEABILITY.md.
 
 Implementation decisions should follow this priority:
 
@@ -763,7 +763,7 @@ The assessment explicitly requests seeded data / credentials for demonstration p
 
 # 18. Angular Application
 
-Configure TWO backend base URLs: auth API for registration/login/public/current-user calls; task API for task CRUD. Scope the interceptor to these configured backend origins/paths. Both hosts allow the documented Angular origin through CORS in M4A; frontend integration remains M5/M6.
+Configure TWO backend base URLs: auth API for registration/login/public/current-user calls; task API for task CRUD. Scope the interceptor to these configured backend origins/paths. Both hosts allow the documented Angular origin through CORS in M4A; frontend integration is implemented in M5/M6.
 
 ## Routes
 
@@ -1333,6 +1333,8 @@ Implement:
 - responsive layout.
 
 No unrelated features.
+
+Implemented in M6: guarded task list, create/edit forms, inline confirmed deletion, centralized numeric status labels and validated DateOnly calendar strings. Safe failures preserve drafts/rows; timeouts and reload recovery are explicit. Automated mapping/component tests, both opt-in real-host probes and browser CRUD/session/mobile/desktop evidence are recorded in M6_COMPLETION.md. No backend changes or dependencies were required.
 
 ---
 

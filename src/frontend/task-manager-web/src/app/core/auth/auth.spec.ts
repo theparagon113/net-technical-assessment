@@ -212,8 +212,10 @@ describe('Authentication session and HTTP boundary', () => {
     expect(TestBed.inject(Router).url).toBe('/login');
     await login();
     await harness.navigateByUrl('/tasks');
+    http.expectOne(apiConfig.taskApiBaseUrl + '/api/tasks').flush([]);
     expect(TestBed.inject(Router).url).toBe('/tasks');
     await harness.navigateByUrl('/register');
+    for (const request of http.match(apiConfig.taskApiBaseUrl + '/api/tasks')) request.flush([]);
     expect(TestBed.inject(Router).url).toBe('/tasks');
     await auth.logout();
     await harness.navigateByUrl('/tasks');
@@ -225,6 +227,7 @@ describe('Authentication session and HTTP boundary', () => {
     const harnessPromise = RouterTestingHarness.create('/tasks');
     await vi.waitFor(() => http.expectOne(`${apiConfig.authApiBaseUrl}/api/auth/me`).flush(user));
     const harness = await harnessPromise;
+    http.expectOne(apiConfig.taskApiBaseUrl + '/api/tasks').flush([]);
     expect(TestBed.inject(Router).url).toBe('/tasks');
     await auth.logout();
     await harness.navigateByUrl('/tasks');

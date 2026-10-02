@@ -2,7 +2,7 @@
 
 A personal task manager developed for a .NET full-stack technical assessment.
 
-M0–M5 and the post-M3 reconciliation checkpoint are complete. The backend has two independent controller-based ASP.NET Core hosts with authentication, task CRUD, shared SQLite persistence, and HTTP integration tests. Angular implements authentication and a protected session placeholder. Task management UI belongs to M6; full-system hardening and the final submission/presentation remain incomplete.
+M0–M6 and the post-M3 reconciliation checkpoint are complete. The backend has two independent controller-based ASP.NET Core hosts with authentication, task CRUD, shared SQLite persistence, and HTTP integration tests. Angular implements authentication and responsive task CRUD. Full-system hardening and the final submission/presentation remain incomplete.
 
 ## Stack and architecture
 
@@ -146,13 +146,13 @@ npm test -- --watch=false
 
 Open `http://localhost:4200`. Start both backend hosts using the shared configuration above. Central public configuration is `src/frontend/task-manager-web/src/app/core/api-config.ts`: `authApiBaseUrl` defaults to `http://localhost:5150`, and `taskApiBaseUrl` to `http://localhost:5149`. Set each to its own host base URL without a trailing slash. For a different frontend origin, update `Cors__FrontendOrigin` in both hosts. Backend signing secrets never belong in frontend configuration.
 
-`/login` and `/register` use Reactive Forms and Auth.Api's actual `{ username, password }` request and `{ userId, username, accessToken, expiresAt }` response. Both successful operations establish a session and navigate to protected `/tasks`, which is an authentication placeholder only. Registration already issues a token in M4; no hidden login is performed. Logout clears the session and navigates to `/login`.
+`/login` and `/register` use Reactive Forms and Auth.Api's actual `{ username, password }` request and `{ userId, username, accessToken, expiresAt }` response. Both successful operations establish a session and navigate to protected `/tasks`, which now provides the M6 task management UI. Registration already issues a token in M4; no hidden login is performed. Logout clears the session and navigates to `/login`.
 
 Only the JWT is persisted under `task-manager.access-token` in sessionStorage. A same-tab refresh rejects malformed/expired tokens and confirms safe identity through protected Auth.Api `/api/auth/me` before allowing navigation. An expiry timer and protected-request 401 clear stale state; login 401 remains a generic form error. Requests time out after ten seconds. The interceptor attaches Bearer only to configured Auth.Api `/api/auth/me` and Task.Api `/api/tasks` or child paths, with exact origin/path boundaries; unrelated origins/assets and anonymous auth endpoints receive no token.
 
 sessionStorage remains accessible to JavaScript under XSS, but limits persistence compared with localStorage. A production architecture could use secure HttpOnly cookies/BFF. This assessment introduces no refresh tokens; guards improve UX and the backend remains the authorization boundary.
 
-The normal test suite uses HTTP mocks and skips one opt-in live test. For real Angular HttpClient/AuthService/interceptor verification, launch both hosts against a **disposable absolute SQLite file** (the probe creates a test user) and matching JWT configuration, then run:
+The normal test suite uses HTTP mocks and skips two opt-in live tests. For real Angular HttpClient/AuthService/interceptor verification, launch both hosts against a **disposable absolute SQLite file** (the probe creates a test user) and matching JWT configuration, then run:
 
 ```powershell
 $env:M5_LIVE = '1'
@@ -160,4 +160,21 @@ npm test -- --watch=false
 Remove-Item Env:M5_LIVE
 ```
 
-The live probe registers/logs in through Auth.Api, confirms `/me`, calls Task.Api's protected collection through the real interceptor, restores a new service from stored JWT, and verifies logout/route protection. It adds no production task feature. See [M5 completion/evidence](docs/M5_COMPLETION.md) for exact results, browser checks and environment limitations. Task UI (M6), final full-system hardening (M7), clean-clone review and presentation (M8) remain.
+The live probe registers/logs in through Auth.Api, confirms `/me`, calls Task.Api's protected collection through the real interceptor, restores a new service from stored JWT, and verifies logout/route protection. The M5 probe remains test-only. See [M5 completion/evidence](docs/M5_COMPLETION.md) for exact results, browser checks and environment limitations. Task UI is complete in M6; final full-system hardening (M7), clean-clone review and presentation (M8) remain.
+
+## Angular task management (M6)
+
+The guarded /tasks screen lists the current user's tasks and supports create, edit, status changes and inline confirmed deletion. Loading, empty-list, field validation, submission and recoverable errors are visible. Save failures preserve form values; delete failures retain the row. Reload tasks checks current server state, including after a timeout where a write may have reached the server.
+
+TaskService uses only the configured Task API base URL and the existing Bearer interceptor. Editable requests contain title, description, status and dueDate, never id/userId. The server response supplies persisted fields and identifiers. Status values remain numeric: 0 Pending, 1 In progress, 2 Completed. Required dueDate uses validated yyyy-MM-dd calendar strings in HTML inputs and JSON; no JavaScript Date/UTC conversion is performed. Optional blank descriptions are handled by the existing backend normalization. Past dates are allowed.
+
+For real CRUD validation through Angular against both disposable local hosts:
+
+```powershell
+$env:M5_LIVE = '1'
+$env:M6_LIVE = '1'
+npm test -- --watch=false
+Remove-Item Env:M5_LIVE, Env:M6_LIVE
+```
+
+The M6 probe registers/logs in, navigates through the real guard, creates/edits/reloads/deletes through TaskService, verifies all numeric statuses and calendar dates, and exercises a real 404 after concurrent deletion. It uses the existing interceptor without manually injecting JWT headers. See [M6 completion/evidence](docs/M6_COMPLETION.md) for file inventory, automated/browser results and review items.

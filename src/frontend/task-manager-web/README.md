@@ -2,9 +2,9 @@
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.1.
 
-M5 implements `/login`, `/register`, and a protected `/tasks` session placeholder. Start both hosts using the [root setup instructions](../../../README.md). Public `src/app/core/api-config.ts` configures auth port 5150 and task port 5149 separately. Only JWT is persisted in sessionStorage; refresh confirms identity through `/api/auth/me`, and logout clears the session. Task CRUD UI is M6.
+M5 implements authentication; M6 provides protected `/tasks` with list/create/edit/status/due-date/delete UI. Start both hosts using the [root setup instructions](../../../README.md). Public `src/app/core/api-config.ts` configures auth port 5150 and task port 5149 separately. Only JWT is persisted in sessionStorage; refresh confirms identity through `/api/auth/me`, and logout clears the session. Task CRUD uses only Task.Api and the existing JWT interceptor.
 
-Use `npm ci`, `npm start`, `npm run build`, and `npm test -- --watch=false`. Normal tests skip the live probe. With both real hosts using a disposable shared database, set PowerShell `$env:M5_LIVE='1'` before tests and remove it afterward. See root README and [M5 evidence](../../../docs/M5_COMPLETION.md) for trade-offs, setup and results. No e2e framework is configured yet.
+Use `npm ci`, `npm start`, `npm run build`, and `npm test -- --watch=false`. Normal tests skip two live probes. With both real hosts using a disposable shared database, set PowerShell `$env:M5_LIVE='1'` and `$env:M6_LIVE='1'` before tests and remove both afterward. See root README and [M6 evidence](../../../docs/M6_COMPLETION.md) for trade-offs, setup and results. No e2e framework is configured yet.
 
 ## Development server
 

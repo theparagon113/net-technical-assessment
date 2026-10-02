@@ -217,3 +217,24 @@ Actual validation: 36 regular Angular cases plus one opt-in live two-host case; 
 Live probe obtains JWT through real Angular AuthService registration/login, persists it, then uses the real interceptor for Auth.Api /me and Task.Api GET /api/tasks. Task.Api accepted it and returned an empty collection for the new account. Only URL/header-presence booleans were observed, never token/secret logging. Probe stays test-only. Tests prove leakage rejection, invalid/expired/blocked storage, failed /me, malformed identity, expiry, logout/restoration race, old/concurrent 401s, guards and safe form/loading errors.
 
 Browser evidence: registration, keyboard login, generic wrong-password failure, links, same-tab reload, logout and post-logout protection, labels, auth screenshots/bounds and clean current console. Requested viewport overrides did not consistently match measured dimensions; only observed narrow bounds/screenshots are claimed. Commands/evidence limits are in M5_COMPLETION.md. M6 task UI, M7 final full-system checks and M8 presentation/clean-clone review remain. Historical records above are preserved.
+
+## M6 actual request, generated work and validation
+
+Actual request excerpts: "M6 only: Angular Task CRUD", "Use the actual M4 API contract", "Do not optimistically invent server-generated values", and "Be careful with timezone/date conversion so the UI does not accidentally shift the selected calendar date." The request required typed Task.Api-only integration, responsive loading/empty/form/error/deletion states, retained M5 auth behavior, tests/live checks, documentation and no commit or M7 work.
+
+Reviewed the canonical requirements and existing TaskRequest/TaskResult, TasksController and Domain validation before defining frontend contracts. Representative actual generated output from task.models.ts:
+
+```typescript
+// DateOnly and HTML date inputs share a calendar string. Never convert through Date/UTC.
+export function inputDateToApi(value: string): string {
+  return apiDateToInput(value);
+}
+```
+
+apiDateToInput validates a real yyyy-MM-dd calendar date, including Gregorian leap years and .NET DateOnly bounds. Numeric enum/label mapping is centralized. TaskService uses configured Task.Api and the original scoped interceptor. The page applies persisted server results; no owner editing or invented IDs. Client validation matches trimmed UTF-16 title/description boundaries for UX while backend remains authoritative.
+
+Implementation and tests were co-authored; no test-first chronology is claimed. Actual corrections: initial patch could not create the tasks parent directory; it was explicitly created. Existing M5 router tests initially reported an unanswered task-list request when the placeholder became a real page; fixtures now answer that request without removing auth assertions. A scripted test update briefly lost TypeScript template backticks and was repaired; no production auth behavior changed. The first M6 live test incorrectly expected the original due date on both edit iterations even after the first update; it now compares against the selected persisted task. Review also identified possible overlap between reload and mutation; submission/deletion now block while loading, with an explicit regression test. Ten-second timeout coverage verifies that unconfirmed writes retain drafts and show no false success. Mobile review led to a small toolbar spacing improvement. No human correction or dependency addition is invented.
+
+Final evidence: 50 regular Angular cases pass with 2 opt-in skips; both live probes enabled give 52 passes and no skips. Live M6 uses real Angular page/TaskService/AuthService/HttpClient/interceptor against both actual hosts and a disposable shared SQLite file. It covers all CRUD, numeric statuses, calendar round trips, empty state, guarded logout and real 404 after another-session deletion. M5's live restoration probe still passes. Browser checks cover registration, keyboard login, empty/list/create/edit/delete/cancel, refresh, logout/guard, mobile form bounds and desktop layout; current console has no warning/error entries. Final build is 314.57 kB raw / 83.03 kB estimated transfer, with no budget warnings. All 191 backend tests remain green; backend build has zero warnings/errors, package inventory has no forbidden dependencies. M6_COMPLETION.md records exact commands and environment limitations.
+
+Restricted production build exited without diagnostics; normal-runtime retry passed. Package inventory initially could not read protected NuGet.Config; approved retry succeeded. Existing HostLauncher was reused unchanged for backend tests. Those environment/tooling failures are not behavior-test evidence. No backend/security/authentication bypass was introduced. Historical reports remain unchanged; M7 and M8 are still pending.
