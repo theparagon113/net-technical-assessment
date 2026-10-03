@@ -1,5 +1,7 @@
 # M4 Completion Report — Two-host Controller-based Web APIs
 
+Publication note: this is a historical milestone record. Machine-specific executable paths in recorded commands are generalized as labeled placeholders; original scope, failures, successful retries, counts and evidence limits are preserved. Ignored launcher/runtime helpers are historical provenance, not reviewer prerequisites.
+
 ## Implemented
 
 M4A shared composition, M4B authentication API and M4C task CRUD API are complete. Both independent executable hosts use the ASP.NET Core MVC controller pipeline and shared Domain/Application/Infrastructure behavior. No host-to-host reference, HTTP startup dependency, extra layer, Angular feature or commit was added. Existing uncommitted M0–M3/reconciliation work was preserved.
@@ -70,7 +72,7 @@ Initial tests and implementation were co-authored; no universal TDD chronology i
 | Command | Exact result |
 | --- | --- |
 | `dotnet build TaskManager.sln --verbosity minimal` | Exit 0; all 9 projects; 0 warnings, 0 errors. Initial restricted restore could not read protected NuGet.Config; approved retry and final build passed. |
-| `dotnet test TaskManager.sln --no-restore --verbosity minimal --diag TestResults/m4-final.log -- RunConfiguration.DotNetHostPath=C:/Maethrillian/NET-TechnicalAssessment/TestResults/HostLauncher/bin/Debug/net10.0/HostLauncher.exe` | Exit 0; Application 65, Infrastructure 48, Auth.Api 23, Task.Api 55; total 191 passed, 0 failed, 0 skipped. |
+| `dotnet test TaskManager.sln --no-restore --verbosity minimal --diag TestResults/m4-final.log -- RunConfiguration.DotNetHostPath=<historical-launcher-path>` | Exit 0; Application 65, Infrastructure 48, Auth.Api 23, Task.Api 55; total 191 passed, 0 failed, 0 skipped. |
 | `dotnet list TaskManager.sln package --include-transitive --no-restore` | Exit 0 after approved NuGet-config access retry; all 9 projects inspected; no Entity Framework, Dapper, Mediator/MediatR. |
 | `npm run build` in Angular directory with bundled Node on PATH | Exit 0 after approved retry; Angular production scaffold bundle generated. Initial restricted attempt exited 1 without useful diagnostics. |
 | `npm test -- --watch=false` with bundled Node on PATH | Exit 0; 1 test file, 2 tests passed. |

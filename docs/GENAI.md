@@ -1,24 +1,45 @@
-# Generative AI Development Notes
+# Generative AI Usage
 
 ## Tools Used
 
-Codex, operating on the repository in the desktop app. This record covers observed M2 and M3 work; it does not reconstruct earlier milestones.
+Codex assisted scoped planning, implementation, explicit SQL, tests, Angular UI and documentation. This record summarizes observed M2–M8 work and the human requirements reconciliation. It does not reconstruct unrecorded earlier prompts or claim that every generated suggestion was accepted.
 
-## M2 Prompt — Actual Excerpts
+## REST API Prompt
 
-> M0 and M1 are complete. Implement **M2 only: SQLite Persistence**.
+The recorded M4 request includes these actual technical excerpts:
 
-> Implement the SQLite persistence layer and repository integration tests using `Microsoft.Data.Sqlite` and explicit parameterized SQL.
+> Implement **M4 only: Two-host controller-based Web APIs**.
+>
+> Use the existing `TaskService`.
+>
+> Ownership must come exclusively from a JWT that ASP.NET Core has successfully validated.
+>
+> The test must exercise both real HTTP application pipelines.
 
-> Do not change the repository contract merely to make SQLite implementation easier.
+The complete request also specified shared composition, registration/login/public/me, all task CRUD verbs, cross-host token acceptance, absolute shared storage, preserved seeds, safe errors, CORS and real HTTP tests.
 
-> If safely seeding the final demo user would require password-hashing behavior that does not yet exist, create the deterministic/idempotent seed mechanism and database support now, and clearly report the final credential/hash population as deferred to M3.
+**Representative consolidated prompt:** The following describes the actual M4 work for presentation; it is not a verbatim historical prompt.
 
-The full supplied prompt additionally required real SQLite tests, ownership predicates, invariant DateOnly mapping, cancellation propagation, minimal user storage contracts, and no authentication/API/frontend implementation.
+> Generate the M4 .NET 10 controller-based REST APIs for this personal task manager, reusing its existing Clean Architecture services and explicit SQLite repositories. Tasks contain title, description, status, due_date (a calendar date exposed as camelCase dueDate), and belong to the validated JWT user. TaskManager.Api exposes authenticated GET collection/by-ID, POST, PUT and DELETE. TaskManager.Auth.Api independently exposes registration/login and explicit public/current-user endpoints. Require one externally configured absolute SQLite file and shared HS256 issuer/audience/key validation; Auth.Api alone seeds after schema initialization. Use correct HTTP statuses, safe ProblemDetails and restricted Angular-origin CORS. Prove login-issued JWT acceptance across both real HTTP pipelines and cross-user CRUD isolation. Do not use Entity Framework, Dapper, MediatR, extra layers or implement Angular.
+
+The prompt constrains scope, reuses existing contracts, names the assessment fields and ownership boundary, and requests observable security/HTTP evidence.
 
 ## Representative Generated Output
 
-The repository update uses explicit owner predicates and affected-row results:
+Actual generated excerpt from [TasksController.cs](../src/backend/TaskManager.Api/Tasks/TasksController.cs):
+
+```csharp
+[HttpPost]
+public async Task<ActionResult<TaskResult>> Create(TaskRequest input, CancellationToken cancellationToken)
+{
+    var result = await tasks.CreateAsync(CurrentIdentity.UserId(User), input.ToInput(), cancellationToken);
+    return CreatedAtAction(nameof(Get), new { id = result.Id }, result);
+}
+```
+
+The class has `[Authorize]`; middleware validates the token before `CurrentIdentity` extracts its owner. `TaskRequest` has only editable fields. TaskService enforces business rules and calls owner-aware persistence. POST returns 201 with GET-by-ID Location; PUT returns 200 with saved data, DELETE 204, and missing/inaccessible records share 404.
+
+Actual generated persistence excerpt from [SqliteTaskRepository.cs](../src/backend/TaskManager.Infrastructure/Persistence/Repositories/SqliteTaskRepository.cs):
 
 ```csharp
 command.CommandText = """
@@ -31,198 +52,9 @@ command.Parameters.AddWithValue("@id", task.Id);
 return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
 ```
 
-## Observed Validation and TDD Evidence
+Parameters preserve SQL-like input as data. The combined task/owner predicate and affected-row result enforce isolation and detect a row disappearing before mutation.
 
-- Tests were written before repository SQL, using temporary NotImplementedException methods.
-- The first test command was blocked by sandbox access to the user NuGet configuration. The elevated retry aborted on test-host startup timeout; another retry with a 180-second timeout also aborted. Neither counted as a red test result.
-- A diagnostic run reached the tests after schema initialization had been implemented: 22 failed against unimplemented repository/seeder methods.
-- After implementing user SQL: 2 passed, 20 failed against remaining task/seeder methods.
-- After implementing task SQL and seeding: all 22 passed.
-- Four additional cases were added after implementation to verify transaction rollback and rejection of absent hash input. These are additional verification, not claimed as test-first development.
-- Unchanged M1 Application tests passed: 45 cases.
-
-Final checks completed:
-
-- `dotnet build`: success, zero warnings and zero errors.
-- `dotnet test`: success, 45 Application plus 26 Infrastructure tests (71 total), no failures/skips. The API test scaffold contains no tests, as expected before M4.
-- `npm run build`: the system Node v24.14.1 was rejected by Angular. With bundled Node v24.19.0 on PATH, the sandboxed build exited without diagnostics; an elevated retry succeeded. No frontend source or dependency changes were needed.
-- `npm test -- --watch=false` with bundled Node v24.19.0: two tests passed in one test file.
-- `git diff --check`: passed.
-
-Targeted commands used during the cycle were `dotnet test tests/TaskManager.Infrastructure.Tests/TaskManager.Infrastructure.Tests.csproj --verbosity minimal`, subsequent runs with `--no-restore`, and the diagnostic run with `--no-build --diag TestResults/m2-infrastructure-runner.log`. M1 was checked independently with `dotnet test tests/TaskManager.Application.Tests/TaskManager.Application.Tests.csproj --no-restore --diag TestResults/m2-runner.log --verbosity minimal`. Startup timeout retries and permission failures are recorded above as tooling failures, not test evidence.
-
-## Review and Scope Decisions
-
-- Preserved the existing uncommitted M1 work, TaskItem invariants, and ITaskRepository signature/semantics.
-- Selected file-per-test isolation with pooling disabled so real independent repository connections share a persistent database during each test and release handles before file deletion.
-- Required a caller-supplied hash for seeding; test fixtures are opaque storage data, not fabricated usable credential hashes. Framework hashing and demo credential population remain M3.
-- During review, the existing gitignore had no SQLite exclusions. Added local `.db` and sidecar exclusions because persisted data can include password hashes.
-- No human corrections or rejected AI proposals have been reported during this M2 interaction. These scope choices are not presented as retrospective correction evidence.
-
-## Security and Edge Cases Reviewed
-
-Real SQLite coverage checks parameterized strings containing SQL syntax, unique usernames, missing rows, null descriptions, leap-day dates under ar-SA culture, every status, generated IDs, ownership on reads/writes, foreign keys despite a disabling input connection string, cancellation, repeatable schema/seed execution, existing demo usernames, preserved hash/task edits/deletions, and rollback after a simulated second-task seed failure.
-
-Authentication, HTTP responses, browser behavior, and password verification are outside M2 and have not been validated here.
-
-## M3 Prompt — Actual Excerpts
-
-> Implement **M3 only: authentication application/infrastructure services**.
-
-> M3 **must replace that temporary username identity behavior with a consistent case-insensitive authentication policy**.
-
-> The database constraint/index must prevent case variants from being inserted even if an application-level availability check is bypassed or races.
-
-> M3 ends at authentication application/infrastructure behavior.
-
-The supplied prompt also required supported password hashing, small immutable authentication contracts, JWT configuration and signature/expiration tests, usable demo hashes, real SQLite identity tests, security review, documentation, complete validation, preservation of previous milestones, and no commit.
-
-## M3 Representative Generated Output
-
-```csharp
-public static int Compare(string? left, string? right) =>
-    StringComparer.OrdinalIgnoreCase.Compare(left?.Trim(), right?.Trim());
-```
-
-The factory registers that comparison on every connection. The initializer adds the constraint:
-
-```sql
-CREATE UNIQUE INDEX IF NOT EXISTS IX_Users_UsernameIdentity
-    ON Users (Username COLLATE USERNAME_IDENTITY);
-```
-
-## M3 Observed Testing and Corrections
-
-- AuthService implementation and its initial tests were authored together; this is not claimed as test-first development.
-- Four SQLite identity tests were written before persistence changes. Initial executions never reached assertions because the test host could not connect; those attempts are tooling failures, not verified red tests. Persistence implementation then proceeded, and the cases passed during full validation.
-- Security review identified that the AI-generated positional AuthInput record's default ToString included the password. A new regression test ran and failed with `secret-password!` visible in the diagnostic string. Overriding ToString removed this exposure; the targeted test passed. AccessToken and AuthResult diagnostic strings were also redacted and covered. This is actual observed red/green evidence and an actual correction of generated output, rather than retrospective TDD history.
-- Replaced an unnecessarily brittle exact JWT claim count assertion with absence-of-password-claims coverage while retaining signature, identity, issuer, audience, and expiry validation.
-- Updated one M2 duplicate-insert test to expect the new documented application exception, retaining its original preservation assertion. New raw SQL tests still assert SQLite unique error 2067; the persistence guarantee was strengthened, not weakened.
-- Added a deterministic real SQLite race: a competing lowercase account is inserted after availability lookup, then the original insert raises the same DuplicateUsernameException without calling token creation.
-
-## M3 Runner and Validation Evidence
-
-NuGet commands initially failed to read the user's protected configuration; elevated retries succeeded. The system's loopback listener redirection caused repeated test-host startup timeouts. Diagnostic logs showed VSTest listening on a LAN address while launching testhost with a 127.0.0.1 endpoint. A standalone TcpListener check reproduced this behavior, including outside the sandbox. Switching to the installed VSTest 17 runner did not fix it.
-
-A temporary ignored `TestResults/HostLauncher` console program measures the actual listener address, replaces only the testhost endpoint argument, and launches the normal dotnet test host. It changes no test code, discovery, assertions, application logic, dependencies, or machine settings. An initial incorrectly cased `DotnetHostPath` setting was rejected; the supported spelling `DotNetHostPath` worked. The workaround is local tooling and is not part of tracked application source.
-
-Successful complete-suite command:
-
-```powershell
-dotnet test --no-restore --verbosity minimal --diag TestResults/m3-final.log -- RunConfiguration.DotNetHostPath=C:/Maethrillian/NET-TechnicalAssessment/TestResults/HostLauncher/bin/Debug/net10.0/HostLauncher.exe
-```
-
-The complete-suite results and final build/dependency checks are recorded in [M3 completion report](M3_COMPLETION.md). No API/browser authentication behavior is claimed; that remains M4+.
-
-## Requirements Reconciliation — Actual Human Review and Correction
-
-The developer's checkpoint prompt states:
-
-> a human review of the original assessment found that the initial execution plan omitted an explicit requirement: the assessment requires a SECOND API for authentication-related functionality.
-
-> Do not implement M4 endpoint functionality in this checkpoint.
-
-The initial AI-assisted plan treated authentication as part of one API host. Human review rechecked the original assessment and found the explicit second-API requirement missing. This checkpoint corrects architecture/roadmap before HTTP endpoints exist, adds TaskManager.Auth.Api and its dedicated test scaffold, and adds canonical requirements and living traceability to prevent recurrence. DEC-015 records the correction; historical reports remain unchanged. This is concrete evidence of critical human review of generated planning, not flawless AI output or blind acceptance.
-
-The audit also replaced the relative SQLite setup example with a planned required common absolute path, assigned Auth.Api demo-seeding ownership, documented compatible JWT validation and two frontend base URLs, and explicitly planned public/protected auth endpoints and cross-host tests. These are documentation/scaffold corrections; startup and endpoints remain M4.
-
-## Final GenAI Deliverable Readiness
-
-| Required item | Actual evidence | Remaining work |
-| --- | --- | --- |
-| Task REST API generation prompt | Actual M2/M3 prompt excerpts and checkpoint excerpt above | PENDING M4: capture the actual REST task API prompt covering create/read/update/delete, title/description/status/due_date and user ownership. No historical API prompt is invented. |
-| Representative REST API output | Actual SQL and identity samples above | PENDING M4: HTTP API sample does not yet exist. Preserve a real generated controller/service excerpt and explain its reviewed behavior. |
-| Validation of suggestions | Observed builds/tests/security review in M2/M3 and checkpoint report | M4 HTTP tests, M5–M7 browser/manual evidence. |
-| Corrections/improvements | M3 diagnostic redaction regression; this human second-API planning correction | Explain both concretely in presentation; add further actual corrections only if observed. |
-| Edge cases | SQL-like text, nullable fields, dates/culture, ownership, duplicate races, Unicode/collisions, seed rollback/preservation | M4 malformed binding, required dates/statuses, inaccessible resources, invalid tokens; M5/M6 UI cases. |
-| Authentication handling | AuthService, supported hasher, JWT generation/signature tests; DEC-013/015 | M4 shared issuer/audience/key validation in both hosts; HTTP cross-host proof. No refresh tokens. |
-| Validation handling | Domain invariants and Application policies; boundary tests | M4 ProblemDetails/status mapping; M5/M6 form feedback. |
-
-No new functional test-first chronology is claimed for this documentation/scaffold checkpoint. Build/test results and any runner limitations are recorded in RECONCILIATION_COMPLETION.md. Final presentation evidence remains incomplete until M4–M8.
-
-## M4 Prompt — Actual Request Excerpts
-
-> Implement **M4 only: Two-host controller-based Web APIs**.
-
-> Use the existing `TaskService`.
-
-> Ownership must come exclusively from a JWT that ASP.NET Core has successfully validated.
-
-> The test must exercise both real HTTP application pipelines.
-
-The actual supplied request specified M4A shared composition/startup, M4B register/login/public/me, M4C all task CRUD verbs, two-host HTTP-to-HTTP JWT proof, absolute shared storage, preserved seeds, real pipeline testing, safe errors, CORS, documentation and no M5/commit. Required task fields come from the canonical project/assessment and existing M1 contracts.
-
-### Representative complete REST-generation prompt for presentation
-
-This is a consolidated representative prompt describing the actual M4 work, not a claim that the following paragraph was sent verbatim earlier:
-
-> Generate the M4 .NET 10 controller-based REST APIs for this personal task manager, reusing its existing Clean Architecture services and explicit SQLite repositories. Tasks contain title, description, status, due_date (a calendar date exposed as camelCase dueDate), and belong to the validated JWT user. TaskManager.Api exposes authenticated GET collection/by-ID, POST, PUT and DELETE. TaskManager.Auth.Api independently exposes registration/login and explicit public/current-user endpoints. Require one externally configured absolute SQLite file and shared HS256 issuer/audience/key validation; Auth.Api alone seeds after schema initialization. Use correct HTTP statuses, safe ProblemDetails and restricted Angular-origin CORS. Prove login-issued JWT acceptance across both real HTTP pipelines and cross-user CRUD isolation. Do not use Entity Framework, Dapper, MediatR, extra layers or implement Angular.
-
-## M4 Representative Generated REST Output
-
-Actual excerpt from `src/backend/TaskManager.Api/Tasks/TasksController.cs`:
-
-```csharp
-[HttpPost]
-public async Task<ActionResult<TaskResult>> Create(TaskRequest input, CancellationToken cancellationToken)
-{
-    var result = await tasks.CreateAsync(CurrentIdentity.UserId(User), input.ToInput(), cancellationToken);
-    return CreatedAtAction(nameof(Get), new { id = result.Id }, result);
-}
-```
-
-The controller is protected at class level. The bearer middleware validates cryptography/lifetime and exactly one positive integer subject before actions run. The request has only editable fields, with no ownership input. Existing TaskService/repository flow scopes all access to that validated owner. Results contain server-owned ID/UserId plus title/description/status/dueDate. PUT returns the updated representation with 200, DELETE 204, and missing/inaccessible resources share 404.
-
-## M4 Observed Validation and Corrections
-
-Initial composition/controllers and tests were authored in the same implementation cycle. This is not represented as universal test-first development, and no M1/M3 business rules were rewritten.
-
-- An initial patch was rejected because it contained delete/add operations targeting the same Program.cs path; it was reapplied as an update. A test-support directory creation also failed and was explicitly created before retrying. These tooling issues are not red behavior evidence.
-- The initial test build found seven omitted cancellation-token arguments in the new startup tests; those callers were corrected without changing existing repository interfaces.
-- The first full HTTP run failed during startup because WebApplicationFactory's app-configuration callback occurred after early fail-fast composition. The fixture now supplies test settings through early host configuration, retaining app configuration for deterministic precedence. Production fail-fast validation was preserved; no environment-wide secret mutation or authentication bypass was introduced. Configuration failures from that run are not claimed as meaningful endpoint red/green evidence.
-- With configuration fixed, all Auth HTTP tests and startup/token tests passed, but nine task cases failed because valid POST requests returned 500 instead of 201. Review found the generated record DTO put Required metadata on the property; MVC record binding expects validation metadata on the constructor parameter. Moving `[property: Required]` to `[Required]` made task creation work and retained omitted/null dueDate 400 handling. The affected task suite then passed all 49 cases. This is an observed correction of generated code, not reconstructed TDD history.
-- Added configured-origin CORS tests, safe unexpected 500 tests in both pipelines, required-expiration and not-before rejection, and assertions that the hosts' actual content roots differ. Those later verification tests are not claimed as pre-implementation tests.
-- M4 uses only the required framework packages: JwtBearer 10.0.12 for real middleware and Mvc.Testing 10.0.12 for integration tests. No forbidden direct/transitive packages were found.
-
-Final validation: build 0 warnings/errors; 65 Application + 48 Infrastructure + 23 Auth HTTP + 55 Task/foundation/startup = 191 backend tests passed, none failed/skipped. The full command used the existing ignored HostLauncher described in the M3 runner section. Dependency inventory, Angular scaffold build/tests and diff checks are recorded with commands/results in M4_COMPLETION.md. Initial restricted build/inventory attempts could not read protected NuGet configuration; approved retries succeeded. Initial restricted Angular build exited without useful diagnostics; the approved bundled-Node retry passed. No machine configuration or application authentication was weakened.
-
-## M4 Security and Edge Cases
-
-Both pipelines reject malformed/unsigned/wrong-key/wrong-issuer/wrong-audience/wrong-algorithm/expired/not-yet-valid/missing-expiration tokens and missing/duplicate/nonpositive/overflow/nonnumeric subjects. Validation uses zero skew, explicit HS256 and unmapped claims; failure responses contain no token-validation internals. Authentication results expose no passwords/hashes, /me exposes no token, unknown user/wrong password share one safe response, and unexpected repository exceptions return generic 500 ProblemDetails with no SQL/stack/signing key.
-
-Real HTTP tests cover valid and malformed binding, required calendar dates, invalid statuses/titles, unchanged tasks after failed updates, Location routing, all CRUD verbs, empty collections, missing IDs, ownership forgery via body/query, and cross-user list/read/update/delete isolation. Auth.Api tokens come from actual HTTP registration/login and are consumed by Task.Api's independent JWT middleware. Both hosts use real isolated temporary SQLite files with ephemeral test keys. No fake principals are shared.
-
-Startup tests prove Task.Api creates schema first without demo data, Auth.Api initializes/seeds normally, different content roots share the configured file, new-file concurrent startup, and repeated/concurrent startup preserves changed demo credentials, existing username casing, edits and deleted tasks. The existing persistence factory/seeder/initializer behavior is unchanged.
-
-The REST prompt/output and backend HTTP evidence are now present. Browser/frontend form validation and the final presentation remain future M5–M8 deliverables. Earlier readiness tables/checkpoint statements above remain historical evidence rather than being rewritten to imply M4 existed earlier.
-
-## M5 actual request and generated work
-
-Actual request excerpts: "Implement M5 only: Angular Authentication", "Do not implement task CRUD UI or task-management features. Those belong to M6", and "Do not invent frontend request/response contracts" (formatting omitted). The request also required sessionStorage, two API URLs, scoped interception/no leakage, authoritative /me restoration, guards/logout, accessible forms, tests and actual two-host Angular forwarding evidence.
-
-Reviewed canonical docs, actual M4 controllers/policies and scaffold first. Registration actually returns identity plus JWT; the conditional no-token registration flow does not apply. DEC-017 records direct session establishment without hidden login or backend changes. Actual generated interceptor output:
-
-```typescript
-if (token && error instanceof HttpErrorResponse && error.status === 401)
-  auth.invalidate(token);
-return throwError(() => error);
-```
-
-The interceptor obtains token only for exact configured protected API origins/paths, excludes anonymous auth calls and propagates errors. AuthService compares request token with current state before invalidating, preventing old/concurrent 401 responses from deleting a newer session. Restoration uses /me for safe identity; exp decoding is UX only. Only JWT is persisted, never passwords/response objects. Forms match backend UTF-16/whitespace rules; backend remains authoritative.
-
-Tests/implementation were co-authored; no universal test-first chronology. Observed corrections: patch parent directories were created; first router assertions navigated before logout redirect completed. Logout now returns its Router promise and tests await it. Service-destruction timer cleanup was added during review. A traceability patch had incorrect context and was corrected. Existing Prettier formatted new files. No dependencies added.
-
-Actual validation: 36 regular Angular cases plus one opt-in live two-host case; final live run 37 passed, normal run 36 passed/1 intentional skip. Production build passed; backend build zero warnings/errors and all 191 tests passed with existing HostLauncher. Restricted NuGet/config, Angular build/cache/write and host runtime failures required approved retries; these are environment failures, not test-first behavior proof. PowerShell Stop-Process failed internally; only inspected validation processes were terminated through .NET Process API. Sandboxed registration returned safe 500; normal-runtime relaunch passed. No authentication bypass or machine-security weakening was used. Restricted GENAI file writes also required an approved documentation-only append.
-
-Live probe obtains JWT through real Angular AuthService registration/login, persists it, then uses the real interceptor for Auth.Api /me and Task.Api GET /api/tasks. Task.Api accepted it and returned an empty collection for the new account. Only URL/header-presence booleans were observed, never token/secret logging. Probe stays test-only. Tests prove leakage rejection, invalid/expired/blocked storage, failed /me, malformed identity, expiry, logout/restoration race, old/concurrent 401s, guards and safe form/loading errors.
-
-Browser evidence: registration, keyboard login, generic wrong-password failure, links, same-tab reload, logout and post-logout protection, labels, auth screenshots/bounds and clean current console. Requested viewport overrides did not consistently match measured dimensions; only observed narrow bounds/screenshots are claimed. Commands/evidence limits are in M5_COMPLETION.md. M6 task UI, M7 final full-system checks and M8 presentation/clean-clone review remain. Historical records above are preserved.
-
-## M6 actual request, generated work and validation
-
-Actual request excerpts: "M6 only: Angular Task CRUD", "Use the actual M4 API contract", "Do not optimistically invent server-generated values", and "Be careful with timezone/date conversion so the UI does not accidentally shift the selected calendar date." The request required typed Task.Api-only integration, responsive loading/empty/form/error/deletion states, retained M5 auth behavior, tests/live checks, documentation and no commit or M7 work.
-
-Reviewed the canonical requirements and existing TaskRequest/TaskResult, TasksController and Domain validation before defining frontend contracts. Representative actual generated output from task.models.ts:
+Actual generated calendar mapping from [task.models.ts](../src/frontend/task-manager-web/src/app/tasks/task.models.ts):
 
 ```typescript
 // DateOnly and HTML date inputs share a calendar string. Never convert through Date/UTC.
@@ -231,22 +63,95 @@ export function inputDateToApi(value: string): string {
 }
 ```
 
-apiDateToInput validates a real yyyy-MM-dd calendar date, including Gregorian leap years and .NET DateOnly bounds. Numeric enum/label mapping is centralized. TaskService uses configured Task.Api and the original scoped interceptor. The page applies persisted server results; no owner editing or invented IDs. Client validation matches trimmed UTF-16 title/description boundaries for UX while backend remains authoritative.
+The shared validator checks real Gregorian dates and .NET DateOnly bounds. Passing the calendar string unchanged prevents timezone shifts.
 
-Implementation and tests were co-authored; no test-first chronology is claimed. Actual corrections: initial patch could not create the tasks parent directory; it was explicitly created. Existing M5 router tests initially reported an unanswered task-list request when the placeholder became a real page; fixtures now answer that request without removing auth assertions. A scripted test update briefly lost TypeScript template backticks and was repaired; no production auth behavior changed. The first M6 live test incorrectly expected the original due date on both edit iterations even after the first update; it now compares against the selected persisted task. Review also identified possible overlap between reload and mutation; submission/deletion now block while loading, with an explicit regression test. Ten-second timeout coverage verifies that unconfirmed writes retain drafts and show no false success. Mobile review led to a small toolbar spacing improvement. No human correction or dependency addition is invented.
+## Validation
 
-Final evidence: 50 regular Angular cases pass with 2 opt-in skips; both live probes enabled give 52 passes and no skips. Live M6 uses real Angular page/TaskService/AuthService/HttpClient/interceptor against both actual hosts and a disposable shared SQLite file. It covers all CRUD, numeric statuses, calendar round trips, empty state, guarded logout and real 404 after another-session deletion. M5's live restoration probe still passes. Browser checks cover registration, keyboard login, empty/list/create/edit/delete/cancel, refresh, logout/guard, mobile form bounds and desktop layout; current console has no warning/error entries. Final build is 314.57 kB raw / 83.03 kB estimated transfer, with no budget warnings. All 191 backend tests remain green; backend build has zero warnings/errors, package inventory has no forbidden dependencies. M6_COMPLETION.md records exact commands and environment limitations.
+Suggestions were checked against the canonical assessment, application contracts, actual source and dependency boundaries. Verification included solution builds, Application unit tests, real SQLite tests, both WebApplicationFactory HTTP pipelines, Angular regular/live tests, production builds, browser layout/console checks and manual security review.
 
-Restricted production build exited without diagnostics; normal-runtime retry passed. Package inventory initially could not read protected NuGet.Config; approved retry succeeded. Existing HostLauncher was reused unchanged for backend tests. Those environment/tooling failures are not behavior-test evidence. No backend/security/authentication bypass was introduced. Historical reports remain unchanged; M7 and M8 are still pending.
+| Recorded milestone | Backend passes | Angular passes | Evidence |
+| --- | --- | --- | --- |
+| M2 | 71: 45 Application + 26 Infrastructure | 2 scaffold | Observed persistence red/green below; no HTTP behavior yet. |
+| M3 | 113: 65 Application + 48 Infrastructure | 2 scaffold | [M3 report](M3_COMPLETION.md); HTTP composition still deferred. |
+| M4 | 191: 65 + 48 + 23 Auth + 55 Task/foundation/startup | 2 scaffold | [M4 report](M4_COMPLETION.md); both real HTTP pipelines. |
+| M5 | 191 | 36 regular; 37 with live auth | [M5 report](M5_COMPLETION.md); auth/session and browser checks. |
+| M6 | 191 | 50 regular; 52 with both live probes | [M6 report](M6_COMPLETION.md); task CRUD and browser checks. |
+| M7 | 194: 65 + 48 + 23 + 58 | 50 regular; 52 live | [M7 report](M7_COMPLETION.md); 92 real HTTP/security assertions and responsive regression. |
+| M8 | 194 | 50 regular; 52 live | [M8 report](M8_COMPLETION.md); local fresh clone, production build, 92 HTTP assertions and browser smoke. |
 
-## M7 observed hardening and corrections
+These are recorded development results, not tests rerun for this publication refinement. Regular M5 tests skipped one opt-in case; regular M6–M8 skipped two. Enabled live suites had no skips. Final backend suites had no failures/skips. M8 production build passed with no warnings, 314.67 kB initial raw / 82.98 kB estimated transfer.
 
-Actual request excerpts: "Implement M7 only: Full-System Hardening", "Do not implement speculative improvements merely because they are possible", and "Use real HTTP/browser evidence where the behavior depends on hosting, authentication, CORS, routing, serialization, or integration."
+HTTP tests exercise controllers, routing/model binding, JWT middleware, services and real SQLite through TestServer. Live probes use Angular HttpClient/interceptor against both running hosts. Browser checks verify rendering, keyboard/forms, CRUD/session/recovery, responsive bounds and the console. M8 measured actual narrow/wide dimensions instead of claiming requested overrides succeeded; its browser deletion check used Cancel, while live probes covered deletion. M7 retains actual browser Confirm-delete evidence.
 
-Review found two concrete corrections to earlier AI-assisted work: a valid unbroken 64-character username overflowed the mobile task layout (390px viewport, 541px document); generated M5 logs/process metadata/screenshot remained tracked despite earlier reports describing validation artifacts as local. Small CSS min-width/wrapping changes brought the document to 390px and panel to 358px. Git tracking was removed for six artifacts, retaining local copies; all .local runtime outputs are now ignored. No key/token/hash was found in those logs, and history was not rewritten.
+### Observed TDD and execution limits
 
-Three existing HTTP invalid-input theory cases were added after real verification for impossible dates, timestamp dates and string statuses. They passed immediately and are not claimed as test-first red/green evidence. POST/PUT both reject these values without mutation. Browser measurements provide the responsive regression evidence; no synthetic layout assertions or new dependencies were introduced.
+- **M2:** Repository tests preceded SQL implementation. Initial restricted/timeout runs did not reach assertions. A later run reached 22 failing repository/seeder tests after schema initialization; user SQL yielded 2 passes/20 failures, then task SQL/seeding yielded 22 passes. Four later rollback/hash-input cases were post-implementation verification. All 26 Infrastructure and 45 Application cases finally passed.
+- **M3:** AuthService and initial tests were co-authored. Four identity tests preceded persistence changes, but runner failures prevented verified red evidence. The diagnostic-redaction regression below has an observed failing/passing cycle.
+- **M4–M6:** Initial implementation and tests were co-authored. Actual failures/corrections are recorded below; no universal test-first claim is made.
+- **M7:** Three serialization-boundary cases were added after HTTP verification and passed immediately. The layout defect was reproduced and corrected in a browser, without treating jsdom as layout proof.
 
-Final evidence: backend build 0 warnings/errors, 194 backend tests (65 Application/48 SQLite/23 Auth HTTP/58 Task HTTP-startup), 50 regular Angular tests plus two opt-in live tests (52 passes with both enabled), production build without warnings, 92 real two-host HTTP/security assertions, and browser registration/login/restore/CRUD/date/status/confirmed deletion/logout/guard/404 recovery checks. Console returned no warning/error entries; desktop/mobile bounds were measured. Full commands and limits are in M7_COMPLETION.md.
+Earlier restricted NuGet/build/runtime attempts and VSTest startup timeouts were environment failures, not behavior-test evidence. M3–M7 used an ignored local launcher that corrected only the testhost endpoint argument; normal VSTest/xUnit assertions remained intact. M8 passed ordinary `dotnet test` in a fresh local clone without that launcher. Its first npm wrapper selected unsupported Node and warned; an explicit supported-runtime retry passed. Historical reports preserve failures, successful retries and evidence limits.
 
-Observed tooling limits: existing HostLauncher reused unchanged; restricted Angular production build exited without diagnostics and package inventory could not read protected NuGet.Config, with approved retries succeeding. The HTTP-only development profiles emit the expected missing HTTPS-redirection-port warning; HTTPS policy was retained. Initial browser navigation before runtime startup failed and worked after startup. Automatic approval review blocked final browser deletion; the developer explicitly approved deleting the disposable M7 task, after which actual confirmation/empty-list/logout passed. Traceability patch contexts were corrected against current file contents. None of these events was fabricated as TDD history or bypassed by weakening security. M8 remains pending; historical evidence is preserved.
+## Corrections and Human Review
+
+### Second API omitted from the initial plan
+
+Human review against the original assessment identified that the initial AI-assisted plan omitted the explicit second-API requirement. The architecture was corrected after M3, before HTTP endpoint implementation proceeded.
+
+The reconciliation added TaskManager.Auth.Api and its test scaffold, canonical requirements and traceability, then assigned two-host MVC controllers, explicit anonymous public/protected current-user endpoints, one absolute database, Auth.Api seed ownership, compatible JWT validation and separate Angular URLs. [DEC-015/016](DECISIONS.md) record the decision; the [checkpoint report](RECONCILIATION_COMPLETION.md) preserves what remained unimplemented at that time. M4 HTTP/startup tests later proved the resulting behavior, including login-issued JWT acceptance across hosts. Earlier milestones are not rewritten as though this requirement had been captured initially.
+
+### Password-bearing diagnostic output (M3)
+
+Security review found that the generated positional AuthInput record's default `ToString` exposed its password. A new regression test failed because a synthetic test password appeared in diagnostics. The override redacted that value; the targeted test then passed. AccessToken/AuthResult diagnostics were also redacted and covered. This was an actual generated-code correction with observed red/green evidence; it did not involve a leaked production credential. See [AuthServiceTests](../tests/TaskManager.Application.Tests/AuthServiceTests.cs).
+
+### MVC record validation metadata (M4)
+
+Nine task HTTP cases failed because valid POSTs returned 500 instead of 201. Review found `Required` metadata on a record property, while MVC record binding required it on the constructor parameter. Changing `[property: Required]` to `[Required]` corrected creation and retained omitted/null due-date 400 behavior. The affected suite then passed all 49 cases; later M4 coverage reached 55 task/foundation/startup cases. See [TaskRequest](../src/backend/TaskManager.Api/Tasks/TaskRequest.cs) and [HTTP tests](../tests/TaskManager.Api.Tests/TaskHttpTests.cs).
+
+### Test configuration and frontend corrections (M4–M6)
+
+The first M4 HTTP run failed during startup because fixture configuration arrived after fail-fast composition. Early host configuration fixed the fixture while preserving production validation; startup failures were not counted as endpoint red/green proof.
+
+Earlier review added SQLite/sidecar ignore rules in M2 because persisted data can contain hashes. M3 replaced a brittle exact JWT claim-count assertion with absence-of-password-claims coverage while retaining signature/identity/issuer/audience/expiry checks. Its duplicate test was updated to the new application exception while direct SQL tests still verified unique error 2067; a real insert-race case verified no token issuance on conflict.
+
+M5 router assertions initially ran before logout navigation completed; returning/awaiting its Router promise corrected that race. Service timer cleanup was added during review. In M6, existing route fixtures needed to answer the new task-list request, and the live test incorrectly expected the original due date after an earlier edit. Fixtures/assertions were corrected without dropping authentication or persistence checks. Review also found reload/mutation overlap; blocking writes while loading gained a regression test. Failed/timeout writes retain drafts and avoid false success.
+
+### Mobile overflow and tracked runtime artifacts (M7)
+
+A valid unbroken 64-character username produced a 541px document in a 390px viewport. Minimal sizing/wrapping changes reduced the document to 390px and panel to 358px; actual browser measurements verified the correction.
+
+Six generated M5 runtime artifacts remained tracked despite earlier reports describing them as local. M7 removed current tracking, retained local copies and ignored all `.local` output. No key/token/hash was found in the inspected logs. Existing history was preserved and still requires publication review; the earlier report discrepancy remains documented.
+
+### Submission documentation/tooling (M8)
+
+Current documents still described completed UI/presentation preparation as pending, the frontend README suggested an unconfigured `ng e2e` runner, and VS Code retained a legacy Karma port-9876 launch. M8 corrected those statements/tooling and validated a local fresh clone. These were real documentation/tooling findings, not invented product defects or TDD evidence. This final pass condenses public documentation and generalizes personal paths without changing those historical facts.
+
+## Edge Cases
+
+- **Persistence:** SQL-like text, generated IDs, nullable descriptions, foreign keys, cancellation, leap dates under a different culture, duplicate/case/Unicode identities and insert races, collision rollback, transactional seeds and preserved credentials/edits/deletions.
+- **HTTP/security:** Missing/inaccessible tasks, cross-user list/read/update/delete isolation, forged owner fields, malformed JSON/IDs, absent/null/impossible/timestamp dates, invalid numeric/string status, invalid tokens/subjects, safe duplicate/credential/500 responses and restricted CORS.
+- **Frontend:** Invalid/blocked storage, expired/malformed tokens, failed `/me`, logout/restoration and old-token 401 races, exact interceptor origin/path boundaries, duplicate/overlapping operations, failed writes/timeouts, concurrent-delete 404 recovery and long usernames.
+
+These cases have source/test or browser evidence in the linked reports; no retrospective failing-test chronology is inferred.
+
+## Authentication and Security
+
+Application AuthService validates credentials and uses infrastructure ports for the supported framework hasher, persisted users and JWT issuance. Passwords are hashed with random salts, omitted from responses and redacted in diagnostic contracts. Unknown-user/wrong-password failures share a generic response; equal execution timing is not claimed.
+
+Both hosts independently validate externally configured issuer/audience/key, HS256 signature, required expiration and lifetime with zero skew/unmapped claims. Exactly one positive integer subject is required. HTTP tests obtain actual Auth.Api registration/login tokens and consume them in Task.Api; owner-aware SQL enforces isolation. Signing secrets are not committed and test keys are ephemeral.
+
+Angular persists only the short-lived JWT, restores claims identity through protected `/me`, and attaches Bearer only to exact configured protected API boundaries. Client decoding/guards improve UX; server authentication/ownership remain authoritative. No refresh tokens, revocation or database account lookup on `/me` is implemented. sessionStorage remains accessible under XSS; logout does not revoke a captured JWT.
+
+## Validation Handling
+
+Domain TaskItem invariants and Application policies enforce business rules independently of HTTP/SQLite. Titles/descriptions are normalized and bounded, username identity is consistent, passwords preserve spaces within bounds, and only defined statuses are accepted. Past calendar dates are allowed.
+
+MVC model binding catches malformed/missing HTTP input, including required nullable due-date metadata. Shared translation returns safe ProblemDetails/statuses: 400 validation, 401 authentication/credentials, 404 missing/inaccessible, 409 duplicate, generic 500 unexpected errors. Invalid updates preserve stored data.
+
+Angular Reactive Forms mirror these boundaries for feedback and preserve unsuccessful drafts/rows. Numeric status and validated calendar strings match the actual API; no frontend ownership input or timezone conversion is introduced.
+
+## Lessons / Human Decisions
+
+Human assessment review established the two-host requirement and corrected generated planning. Focused services, specific repositories, explicit SQL and framework cryptography kept the implementation explainable. Live HTTP/browser checks exposed issues beyond unit-test boundaries.
+
+Requirement traceability and manual review complement automated checks. Generated code, prompts and claims are accepted only with recorded evidence. Selected TDD cycles remain useful evidence; partial adoption stays explicit. Presentation material is prepared, while rehearsal, public publication and delivery remain human actions.

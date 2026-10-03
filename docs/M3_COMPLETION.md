@@ -1,5 +1,7 @@
 # M3 Completion Report
 
+Publication note: this is a historical milestone record. Machine-specific executable paths in recorded commands are generalized as labeled placeholders; original scope, failures, successful retries, counts and evidence limits are preserved. Ignored launcher/runtime helpers are historical provenance, not reviewer prerequisites.
+
 ## Implemented
 
 M3 implements registration/login application behavior, immutable input/result/token contracts, validation policies, focused authentication failures, supported password hashing/verification, configurable signed JWT creation, definitive case-insensitive username identity, safe M2 index migration, and usable demo hashing/seeding pieces. API/startup composition remains M4. The initial working tree was clean; M0/M1 task behavior and all prior database tests remain intact. No commit was created.
@@ -93,7 +95,7 @@ The initial AuthService tests were authored with implementation, not represented
 Final complete-suite command on this machine:
 
 ```powershell
-dotnet test --no-restore --verbosity minimal --diag TestResults/m3-final.log -- RunConfiguration.DotNetHostPath=C:/Maethrillian/NET-TechnicalAssessment/TestResults/HostLauncher/bin/Debug/net10.0/HostLauncher.exe
+dotnet test --no-restore --verbosity minimal --diag TestResults/m3-final.log -- RunConfiguration.DotNetHostPath=<historical-launcher-path>
 ```
 
 Plain test invocations aborted before executing assertions because this machine redirects a requested loopback listener to its LAN address. The ignored launcher corrects the testhost endpoint argument only; standard VSTest/xUnit discovery and execution still run the entire suite. The workaround and failed attempts are documented in GENAI.md; no passing result is attributed to an aborted run.

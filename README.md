@@ -1,180 +1,135 @@
 # Task Manager
 
-A personal task manager developed for a .NET full-stack technical assessment.
+A .NET 10 / C# and Angular 22 application for registering, signing in and managing personal tasks. Tasks have a title, optional description, status and calendar due date; users can access only their own records.
 
-M0–M7 and the post-M3 reconciliation checkpoint are complete. The backend has two independent controller-based ASP.NET Core hosts with authentication, task CRUD, shared SQLite persistence, and HTTP integration tests. Angular implements authentication and responsive task CRUD. M7 verified the full system and fixed long-username mobile overflow and tracked runtime artifacts; see [M7 evidence](docs/M7_COMPLETION.md). Final submission/presentation remains M8.
+## User Story
 
-## Stack and architecture
+> As a registered user, I want to securely manage my personal tasks so that I can keep track of the work I need to complete.
 
-- .NET 10 / ASP.NET Core MVC Web API controllers / C#
-- SQLite through `Microsoft.Data.Sqlite`, explicit parameterized SQL and mapping
-- Framework password hashing and JWT Bearer authentication
-- xUnit, real SQLite tests, and `WebApplicationFactory` HTTP tests
-- Angular 22 / TypeScript / standalone components / Router / CSS
+## Architecture
+
+Two separate executable ASP.NET Core MVC / Web API hosts reuse the same Domain, Application and Infrastructure layers and one SQLite database:
 
 ```text
-Domain ← Application ← Infrastructure
-                          ↑       ↑
-               TaskManager.Api   TaskManager.Auth.Api
-                   task CRUD     register/login/public/me
-                          \       /
-                          one SQLite file
+Angular
+   +--> TaskManager.Auth.Api --> shared SQLite database
+   |       registration / login / anonymous public / authorized me
+   |
+   +--> TaskManager.Api ------> shared SQLite database
+           JWT-protected task CRUD
 ```
 
-Neither host references or calls the other. Application rules and ownership checks remain in the existing inner layers. `src/backend/SharedApi` is linked presentation-layer source compiled into both hosts for consistent composition, errors, claims and CORS; it is not another project/layer. JWT validation policy lives in Infrastructure/Authentication. Controllers are grouped by feature.
+Application services and Domain invariants handle business rules; Infrastructure uses Microsoft.Data.Sqlite, parameterized SQL and explicit mapping. No Entity Framework, Dapper or Mediator/MediatR is used. See the [architecture reference](docs/ARCHITECTURE.md) for dependencies, request flows and HTTP contracts.
 
-See [assessment requirements](docs/ASSESSMENT_REQUIREMENTS.md), [project definition](docs/PROJECT_DEFINITION.md), [user story](docs/USER_STORY.md), [decisions](docs/DECISIONS.md), [traceability](docs/REQUIREMENTS_TRACEABILITY.md), and [M4 completion report](docs/M4_COMPLETION.md).
+## Quick Start — Windows PowerShell
 
-## Local backend setup
+**Prerequisites:** Git, .NET 10 SDK (the backend targets `net10.0`), and Node.js with npm (project version: 11.11.0). Recommend [Node.js 24 LTS](https://nodejs.org/en/about/previous-releases); when using Node 24, **24.15.0 or newer within the 24.x series is required**. The full supported Node range in `package.json` is `^22.22.3 || ^24.15.0 || >=26.0.0`. Dependency restoration needs NuGet/npm access. SQLite requires no database server.
 
-Install the .NET 10 SDK. Run from the repository root. Supply one absolute SQLite file and identical JWT configuration to both hosts. There are no tracked database/signing-key defaults.
+1. Open PowerShell **at the cloned repository root**. Verify prerequisites, restore and build:
+
+   ```powershell
+   dotnet --version
+   node --version
+   npm --version
+   dotnet restore TaskManager.sln
+   dotnet build TaskManager.sln
+   ```
+
+2. In that same shell, create local storage and configure **one absolute SQLite file and one JWT key shared by both APIs**. Run this block once per demo session:
+
+   ```powershell
+   $taskManagerDataDirectory = Join-Path (Get-Location).Path '.local'
+   New-Item -ItemType Directory -Force -Path $taskManagerDataDirectory | Out-Null
+   $taskManagerDatabaseFile = Join-Path $taskManagerDataDirectory 'task-manager.db'
+   $env:ConnectionStrings__TaskManager = "Data Source=$taskManagerDatabaseFile"
+   $env:Jwt__Issuer = 'task-manager-local'
+   $env:Jwt__Audience = 'task-manager-backend'
+   $taskManagerKeyBytes = New-Object byte[] 32
+   $taskManagerRng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+   try { $taskManagerRng.GetBytes($taskManagerKeyBytes) }
+   finally { $taskManagerRng.Dispose() }
+   $env:Jwt__SigningKey = [Convert]::ToBase64String($taskManagerKeyBytes)
+   $env:Jwt__LifetimeMinutes = '15'
+   $env:Cors__FrontendOrigin = 'http://localhost:4200'
+   ```
+
+   Keep the signing key outside source control; do not put it in `appsettings.json` or Angular. Both hosts reject missing/relative database paths. Do not generate a separate key for each host.
+
+3. Start **Auth.Api first** for demo population, then Task.Api, from the same configured shell. Both processes inherit the exact database/JWT settings:
+
+   ```powershell
+   $taskManagerAuthProcess = Start-Process dotnet -WindowStyle Hidden -PassThru `
+       -ArgumentList 'run --no-build --project src/backend/TaskManager.Auth.Api --launch-profile http' `
+       -RedirectStandardOutput (Join-Path $taskManagerDataDirectory 'auth-output.log') `
+       -RedirectStandardError (Join-Path $taskManagerDataDirectory 'auth-error.log')
+   $taskManagerTaskProcess = Start-Process dotnet -WindowStyle Hidden -PassThru `
+       -ArgumentList 'run --no-build --project src/backend/TaskManager.Api --launch-profile http' `
+       -RedirectStandardOutput (Join-Path $taskManagerDataDirectory 'task-output.log') `
+       -RedirectStandardError (Join-Path $taskManagerDataDirectory 'task-error.log')
+   Get-Content (Join-Path $taskManagerDataDirectory 'auth-output.log')
+   Get-Content (Join-Path $taskManagerDataDirectory 'task-output.log')
+   ```
+
+   Wait until both logs show `Now listening on`; repeat the two `Get-Content` commands if needed. Auth.Api uses **http://localhost:5150**, Task.Api **http://localhost:5149**. Inspect the corresponding error logs if startup fails. Both hosts automatically create the SQLite file and initialize schema; no manual SQL, migrations or separate database setup command is required. Only Auth.Api seeds three tasks for a newly created demo account. Restarts preserve existing credentials, task edits and deletions. Task.Api can start independently but does not seed.
+
+4. Keep both APIs running. In a **second PowerShell terminal at the repository root**, start Angular:
+
+   ```powershell
+   Set-Location src/frontend/task-manager-web
+   npm ci
+   npm start
+   ```
+
+   `npm ci` installs the locked dependencies, including the local Angular CLI; no global Angular CLI installation is required. The frontend already targets Auth.Api on port 5150 and Task.Api on port 5149 in `src/app/core/api-config.ts`. The documented HTTP profiles require no HTTPS development certificate or frontend configuration changes. Keep ports 4200, 5150 and 5149 available.
+
+5. Open **[http://localhost:4200](http://localhost:4200)** and sign in:
+
+   | Username | Password |
+   | --- | --- |
+   | `demo` | `Demo123!` |
+
+   These are intentionally public demo credentials. An existing demo account retains its current password; use a new filename in step 2 for fresh seed data. Create, edit, change status and delete tasks, then sign out.
+
+   Alternatively, choose **Create an account** on the login page (or open [http://localhost:4200/register](http://localhost:4200/register)). Registration signs you in automatically; a new account starts with an empty task list.
+
+For shutdown, HTTPS profiles, HTTP probes and troubleshooting, see [local runtime details](docs/ARCHITECTURE.md#local-runtime-reference). The [demo checklist](docs/DEMO_CHECKLIST.md) provides a repeatable five-minute walkthrough.
+
+## Running tests
+
+In a separate PowerShell terminal at the repository root, run backend tests. They provide isolated databases and JWT settings; neither running API processes nor the demo environment variables are required:
 
 ```powershell
-dotnet restore TaskManager.sln
-dotnet build TaskManager.sln
-
-$taskManagerDataDirectory = Join-Path (Get-Location).Path '.local'
-New-Item -ItemType Directory -Force -Path $taskManagerDataDirectory | Out-Null
-$taskManagerDatabaseFile = Join-Path $taskManagerDataDirectory 'task-manager.db'
-$env:ConnectionStrings__TaskManager = "Data Source=$taskManagerDatabaseFile"
-$env:Jwt__Issuer = 'task-manager-local'
-$env:Jwt__Audience = 'task-manager-backend'
-$env:Jwt__SigningKey = [Convert]::ToBase64String(
-    [System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
-$env:Jwt__LifetimeMinutes = '15'
-$env:Cors__FrontendOrigin = 'http://localhost:4200'
-
-# Both processes inherit this exact configuration. Generate the signing key once.
-$taskManagerAuthProcess = Start-Process dotnet -WindowStyle Hidden -PassThru `
-    -ArgumentList 'run --no-build --project src/backend/TaskManager.Auth.Api --launch-profile http' `
-    -RedirectStandardOutput (Join-Path $taskManagerDataDirectory 'auth-output.log') `
-    -RedirectStandardError (Join-Path $taskManagerDataDirectory 'auth-error.log')
-$taskManagerTaskProcess = Start-Process dotnet -WindowStyle Hidden -PassThru `
-    -ArgumentList 'run --no-build --project src/backend/TaskManager.Api --launch-profile http' `
-    -RedirectStandardOutput (Join-Path $taskManagerDataDirectory 'task-output.log') `
-    -RedirectStandardError (Join-Path $taskManagerDataDirectory 'task-error.log')
-```
-
-Auth HTTP is `http://localhost:5150`; task HTTP is `http://localhost:5149`. Inspect the local output/error logs for startup. To run interactively instead, use the corresponding `dotnet run` commands in terminals configured with the exact same values. HTTPS profiles retain auth port 7139 and task port 7138; use trusted local development certificates when choosing those profiles. The HTTP profiles are for local assessment development.
-
-Both hosts ensure the transactional/idempotent schema and deliberately create the database's parent directory. Task.Api can start first and does not seed. Auth.Api hashes the public demo password through `IPasswordHasher` and seeds only a newly inserted demo account. Reruns do not reset existing credentials, overwrite task edits or restore deletions, including existing demo usernames in other casing. Start Auth.Api for demo population; Task.Api has no startup HTTP dependency on it.
-
-After startup, exercise the actual login and protected task APIs:
-
-```powershell
-$taskManagerLogin = Invoke-RestMethod -Method Post `
-    -Uri 'http://localhost:5150/api/auth/login' -ContentType 'application/json' `
-    -Body (@{ username = 'demo'; password = 'Demo123!' } | ConvertTo-Json)
-$taskManagerHeaders = @{ Authorization = "Bearer $($taskManagerLogin.accessToken)" }
-Invoke-RestMethod -Uri 'http://localhost:5150/api/auth/me' -Headers $taskManagerHeaders
-Invoke-RestMethod -Uri 'http://localhost:5149/api/tasks' -Headers $taskManagerHeaders
-
-# Stop only these locally launched hosts when finished.
-Stop-Process -Id $taskManagerAuthProcess.Id, $taskManagerTaskProcess.Id
-```
-
-Demo credentials are **demo / Demo123!**, intentionally public assessment data. An existing demo account keeps its existing password.
-
-## Configuration and security
-
-| Setting (environment variable) | Behavior |
-| --- | --- |
-| `ConnectionStrings:TaskManager` (`ConnectionStrings__TaskManager`) | Required valid SQLite connection string with absolute file Data Source; same file for both processes. Missing/empty/relative/in-memory host configuration fails startup. |
-| `Jwt:Issuer` (`Jwt__Issuer`) | Required nonblank issuer, identical in both hosts. |
-| `Jwt:Audience` (`Jwt__Audience`) | Required nonblank logical backend audience, identical in both hosts. |
-| `Jwt:SigningKey` (`Jwt__SigningKey`) | Required Base64 random key of at least 32 bytes. Never commit it. |
-| `Jwt:LifetimeMinutes` (`Jwt__LifetimeMinutes`) | Default 15; permitted 1–60. |
-| `Cors:FrontendOrigin` (`Cors__FrontendOrigin`) | Default `http://localhost:4200`; one explicit HTTP(S) origin, no unrestricted origins. |
-
-Tokens use HS256, `sub` (positive integer user ID), `unique_name` (display username), issuer/audience, not-before and expiration. Both hosts validate signature, algorithm, issuer, audience and lifetime with zero clock skew and disabled claim remapping. Missing, repeated, malformed or nonpositive subjects fail authentication. Task ownership always comes from the validated identity. Extra ownership fields in JSON/query are ignored and cannot change the owner. No refresh tokens are implemented.
-
-Usernames are trimmed, allow 3–64 UTF-16 characters excluding control characters, preserve display casing, and compare using `StringComparer.OrdinalIgnoreCase`. SQLite registers the shared `USERNAME_IDENTITY` collation and enforces its unique index. Existing identity collisions fail initialization transactionally; external SQL tools must register the same collation to write usernames. Passwords allow 8–128 UTF-16 characters, reject whitespace-only input, and are never trimmed. The framework IdentityV3 hasher uses salted PBKDF2-HMAC-SHA512 with 210,000 iterations.
-
-Every repository opens/disposes its own connection and enforces foreign keys. Resource queries include both task ID and user ID. Due dates are calendar dates stored as invariant `yyyy-MM-dd`, with no time zone. The connection factory still supports isolated caller-supplied test configurations; absolute file restrictions apply to the HTTP hosts.
-
-## HTTP contract
-
-| Host | Endpoint | Success | Errors |
-| --- | --- | --- | --- |
-| Auth.Api | `POST /api/auth/register` | 201 with user ID, username, access token and UTC expiration | 400 input; 409 duplicate |
-| Auth.Api | `POST /api/auth/login` | 200 with same authentication result | 400 input; generic 401 credentials |
-| Auth.Api | `GET /api/auth/public` | Anonymous 200 with small public message | — |
-| Auth.Api | `GET /api/auth/me` | Protected 200 with user ID/display username | 401 authentication |
-| Task.Api | `GET /api/tasks` | Protected 200 with owned tasks; empty collection is `[]` | 401 authentication |
-| Task.Api | `GET /api/tasks/{id}` | Protected 200 with owned task | 400 malformed ID; 401; 404 |
-| Task.Api | `POST /api/tasks` | Protected 201 with task and GET-by-ID Location | 400; 401 |
-| Task.Api | `PUT /api/tasks/{id}` | Protected 200 with updated task | 400; 401; 404 |
-| Task.Api | `DELETE /api/tasks/{id}` | Protected 204 | 400; 401; 404 |
-
-Missing and inaccessible tasks return the same 404. Errors use safe ProblemDetails, including unexpected 500 responses; login never distinguishes unknown username from wrong password. Responses never include passwords, password hashes or signing keys. Registration returns 201 without inventing a user resource Location.
-
-Task requests contain `title`, optional `description`, required `dueDate`, and optional numeric `status` (0 Pending, 1 InProgress, 2 Completed; default Pending). `dueDate` is the JSON spelling of the assessment's `due_date` calendar field. Results also contain server-assigned `id` and `userId`. Titles are trimmed/required with maximum 120 characters; descriptions maximum 1000. Past dates are allowed. Example request:
-
-```json
-{"title":"Review assessment","description":"Check requirements","dueDate":"2026-10-03","status":0}
-```
-
-## Validation
-
-```powershell
-dotnet build TaskManager.sln
 dotnet test TaskManager.sln
-dotnet list TaskManager.sln package --include-transitive --no-restore
-git diff --check
 ```
 
-Application tests use fast abstractions; Infrastructure tests use actual isolated SQLite. Both API suites exercise routing/model binding, JWT authentication, authorization, CORS, errors, controllers, services and real SQLite through `WebApplicationFactory`. Task tests obtain tokens from actual Auth.Api registration/login HTTP responses and use them in the independent task HTTP pipeline. Startup tests cover different content roots, Task.Api first/no seed, Auth.Api seeding, concurrent/repeated initialization, and credential/edit/deletion preservation.
-
-On this development machine only, the existing loopback testhost redirection requires the ignored local HostLauncher described in [GenAI evidence](docs/GENAI.md). The recorded M4 full-suite command is:
+From that same repository-root terminal, after `npm ci` in Quick Start step 4, run frontend tests:
 
 ```powershell
-dotnet test TaskManager.sln --no-restore --verbosity minimal --diag TestResults/m4-final.log -- RunConfiguration.DotNetHostPath=C:/Maethrillian/NET-TechnicalAssessment/TestResults/HostLauncher/bin/Debug/net10.0/HostLauncher.exe
+Set-Location src/frontend/task-manager-web
+npm test -- --watch=false
 ```
 
-That local launcher is not a clean-clone prerequisite or application dependency. Standard test portability on this machine is not claimed.
+From the frontend directory, build for production (`angular.json` defaults to the production configuration):
 
-## Angular authentication (M5)
-
-From `src/frontend/task-manager-web`, use supported Node `^22.22.3`, `^24.15.0` or `>=26.0.0`:
-
-```sh
-npm ci
-npm start
+```powershell
 npm run build
-npm test -- --watch=false
 ```
 
-Open `http://localhost:4200`. Start both backend hosts using the shared configuration above. Central public configuration is `src/frontend/task-manager-web/src/app/core/api-config.ts`: `authApiBaseUrl` defaults to `http://localhost:5150`, and `taskApiBaseUrl` to `http://localhost:5149`. Set each to its own host base URL without a trailing slash. For a different frontend origin, update `Cors__FrontendOrigin` in both hosts. Backend signing secrets never belong in frontend configuration.
+Tests cover Application/business behavior, real SQLite access, both HTTP pipelines, authentication and user isolation, plus Angular forms, routing and CRUD. Regular Angular tests skip two opt-in live cases; [live-probe instructions](docs/ARCHITECTURE.md#live-angular-probes) use a disposable database. Recorded M8 results: 194 backend passes, 50 regular Angular passes and 52 with both live probes enabled. These are historical results, documented in the final validation report.
 
-`/login` and `/register` use Reactive Forms and Auth.Api's actual `{ username, password }` request and `{ userId, username, accessToken, expiresAt }` response. Both successful operations establish a session and navigate to protected `/tasks`, which now provides the M6 task management UI. Registration already issues a token in M4; no hidden login is performed. Logout clears the session and navigates to `/login`.
+## Documentation
 
-Only the JWT is persisted under `task-manager.access-token` in sessionStorage. A same-tab refresh rejects malformed/expired tokens and confirms safe identity through protected Auth.Api `/api/auth/me` before allowing navigation. An expiry timer and protected-request 401 clear stale state; login 401 remains a generic form error. Requests time out after ten seconds. The interceptor attaches Bearer only to configured Auth.Api `/api/auth/me` and Task.Api `/api/tasks` or child paths, with exact origin/path boundaries; unrelated origins/assets and anonymous auth endpoints receive no token.
+- [Assessment requirements](docs/ASSESSMENT_REQUIREMENTS.md) and [project definition](docs/PROJECT_DEFINITION.md)
+- [Architecture and HTTP contracts](docs/ARCHITECTURE.md)
+- [GenAI prompt, generated output, validation and corrections](docs/GENAI.md)
+- [Design decisions](docs/DECISIONS.md)
+- [Requirements traceability](docs/REQUIREMENTS_TRACEABILITY.md)
+- [Presentation and code-review guide](docs/PRESENTATION_GUIDE.md)
+- [Demo checklist](docs/DEMO_CHECKLIST.md)
+- [Final validation and publication review](docs/M8_COMPLETION.md)
 
-sessionStorage remains accessible to JavaScript under XSS, but limits persistence compared with localStorage. A production architecture could use secure HttpOnly cookies/BFF. This assessment introduces no refresh tokens; guards improve UX and the backend remains the authorization boundary.
+## Limitations / trade-offs
 
-The normal test suite uses HTTP mocks and skips two opt-in live tests. For real Angular HttpClient/AuthService/interceptor verification, launch both hosts against a **disposable absolute SQLite file** (the probe creates a test user) and matching JWT configuration, then run:
+SQLite suits this small workload; schema initialization is not a general migration system. The short-lived JWT in sessionStorage is accessible under XSS, and logout does not revoke a copied token. No refresh tokens, password recovery, sharing, pagination or realtime concurrency handling are implemented. HTTP profiles are for local development; no deployment or production-readiness claim is made.
 
-```powershell
-$env:M5_LIVE = '1'
-npm test -- --watch=false
-Remove-Item Env:M5_LIVE
-```
-
-The live probe registers/logs in through Auth.Api, confirms `/me`, calls Task.Api's protected collection through the real interceptor, restores a new service from stored JWT, and verifies logout/route protection. The M5 probe remains test-only. See [M5 completion/evidence](docs/M5_COMPLETION.md) for exact results, browser checks and environment limitations. Task UI is complete in M6 and full-system hardening in M7; clean-clone review and presentation remain M8.
-
-## Angular task management (M6)
-
-The guarded /tasks screen lists the current user's tasks and supports create, edit, status changes and inline confirmed deletion. Loading, empty-list, field validation, submission and recoverable errors are visible. Save failures preserve form values; delete failures retain the row. Reload tasks checks current server state, including after a timeout where a write may have reached the server.
-
-TaskService uses only the configured Task API base URL and the existing Bearer interceptor. Editable requests contain title, description, status and dueDate, never id/userId. The server response supplies persisted fields and identifiers. Status values remain numeric: 0 Pending, 1 In progress, 2 Completed. Required dueDate uses validated yyyy-MM-dd calendar strings in HTML inputs and JSON; no JavaScript Date/UTC conversion is performed. Optional blank descriptions are handled by the existing backend normalization. Past dates are allowed.
-
-For real CRUD validation through Angular against both disposable local hosts:
-
-```powershell
-$env:M5_LIVE = '1'
-$env:M6_LIVE = '1'
-npm test -- --watch=false
-Remove-Item Env:M5_LIVE, Env:M6_LIVE
-```
-
-The M6 probe registers/logs in, navigates through the real guard, creates/edits/reloads/deletes through TaskService, verifies all numeric statuses and calendar dates, and exercises a real 404 after concurrent deletion. It uses the existing interceptor without manually injecting JWT headers. See [M6 completion/evidence](docs/M6_COMPLETION.md) for file inventory, automated/browser results and review items. M7 reran both probes and browser CRUD/session/recovery checks; current results are 194 backend cases, 50 regular Angular cases and two additional opt-in live cases. `.local/` runtime logs/data and `TestResults/` verification artifacts are ignored; do not commit them. The intentionally HTTP-only development profiles emit an HTTPS-redirection port warning; HTTPS profiles retain their configured HTTPS listeners.
+M0–M8 implementation and presentation preparation are complete. TDD adoption was partial: selected failing/passing cycles are recorded, alongside co-authored implementation/tests. [Decisions](docs/DECISIONS.md) and [GenAI evidence](docs/GENAI.md) explain these trade-offs. Public publication and human rehearsal/presentation remain submission actions.

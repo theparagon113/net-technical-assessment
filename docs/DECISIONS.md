@@ -2,6 +2,8 @@
 
 This document records meaningful technical decisions made during the development of the technical assessment.
 
+Final M8 reading guide: DEC-015/016 implement the two-host correction; DEC-012/013 define identity/cryptography; DEC-017/018 define the implemented Angular session/task behavior. Earlier entries preserve decision-time context (including later milestones described as future work); they are not current pending-status reports. All implementation milestones are complete. M8 changes documentation/review tooling only and introduces no new architecture decision.
+
 Its purpose is to preserve the reasoning behind the implementation so those decisions can be reviewed, explained, and defended during the technical presentation and code review.
 
 This is not intended to document every implementation detail.
@@ -156,7 +158,7 @@ Accepted
 
 The assessment allows a frontend framework of the developer's choice and provides React and Vue only as examples.
 
-The developer has prior experience with Angular and has previously discussed Angular experience during the interview process.
+Existing Angular familiarity reduces implementation risk and supports a clear technical review.
 
 ## Decision
 

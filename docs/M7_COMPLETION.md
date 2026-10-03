@@ -1,5 +1,7 @@
 # M7 Full-System Hardening
 
+Publication note: this is a historical milestone record. Machine-specific executable paths in recorded commands are generalized as labeled placeholders; original scope, failures, successful retries, counts and evidence limits are preserved. Ignored launcher/runtime helpers are historical provenance, not reviewer prerequisites.
+
 ## Status
 
 M7 only is complete. Automated, real HTTP and browser checks passed, including final browser Confirm delete after the developer's explicit action-time approval. Automatic approval review initially rejected that action; it was not bypassed. No commit was created and M8 was not started.
@@ -43,18 +45,18 @@ The CSS regression was reproduced and verified through actual browser layout mea
 
 Run from the repository root unless specified. Bundled Node executable:
 
-`C:/Users/geroC/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe`
+`<supported-node>`
 
 | Command | Result |
 | --- | --- |
 | `dotnet build TaskManager.sln --no-restore --verbosity minimal` | Baseline and final pass; nine projects, 0 warnings, 0 errors. |
-| `dotnet test TaskManager.sln --no-restore --no-build --verbosity minimal --diag TestResults/m7-baseline.log -- RunConfiguration.DotNetHostPath=C:/Maethrillian/NET-TechnicalAssessment/TestResults/HostLauncher/bin/Debug/net10.0/HostLauncher.exe` | 191 passed: Application 65, Infrastructure 48, Auth.Api 23, Task.Api 55; no failures/skips. |
+| `dotnet test TaskManager.sln --no-restore --no-build --verbosity minimal --diag TestResults/m7-baseline.log -- RunConfiguration.DotNetHostPath=<historical-launcher-path>` | 191 passed: Application 65, Infrastructure 48, Auth.Api 23, Task.Api 55; no failures/skips. |
 | Same command with `--diag TestResults/m7-final.log` | 194 passed: 65 + 48 + 23 + 58; no failures/skips. |
 | `dotnet list TaskManager.sln package --include-transitive --no-restore` | Passed after normal-runtime retry for denied user NuGet.Config access; no forbidden packages. |
 | `& '<bundled Node>' node_modules/@angular/cli/bin/ng.js test --watch=false` (frontend directory) | Baseline 50 passed, 2 intentional live skips; no errors/warnings. |
 | `$env:M5_LIVE='1'; $env:M6_LIVE='1'; & '<bundled Node>' node_modules/@angular/cli/bin/ng.js test --watch=false` (frontend directory, both hosts running) | After CSS fix: 52 passed, no failures/skips, seven files. |
 | `& '<bundled Node>' node_modules/@angular/cli/bin/ng.js build` (frontend directory) | Restricted run exited 1 with no diagnostics; normal-runtime retry passed baseline, 314.57 kB raw / 83.03 kB estimated transfer. |
-| `$env:PATH='C:\Users\geroC\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin;' + $env:PATH; npm test -- --watch=false` (frontend directory) | Final 50 passed, 2 intentional live skips, five files passed/two skipped; exit 0. |
+| `$env:PATH='<supported-node-bin>;' + $env:PATH; npm test -- --watch=false` (frontend directory) | Final 50 passed, 2 intentional live skips, five files passed/two skipped; exit 0. |
 | Same supported PATH setup, `npm run build` (frontend directory) | Final production build exit 0, 314.67 kB raw / 82.98 kB transfer, no budget/compiler warnings. |
 | `& ./TestResults/m7-start.ps1` | Launched real task/auth hosts and Angular with disposable absolute TestResults/m7-runtime/m7.db, ephemeral random shared key and localhost:4200 CORS; no key printed. |
 | `& '<bundled Node>' TestResults/m7-http.mjs` | 92 real HTTP/security assertions passed; no JWT printed. |

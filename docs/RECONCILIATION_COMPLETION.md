@@ -1,5 +1,7 @@
 # Requirements Reconciliation Completion Report
 
+Publication note: this is a historical milestone record. Machine-specific executable paths in recorded commands are generalized as labeled placeholders; original scope, failures, successful retries, counts and evidence limits are preserved. Ignored launcher/runtime helpers are historical provenance, not reviewer prerequisites.
+
 ## Implemented
 
 Completed the requirements reconciliation and architecture correction checkpoint between M3 and M4. Added the missing second executable API scaffold and dedicated test scaffold, canonical assessment requirements, a living evidence matrix, corrected operating rules/architecture/roadmap, and honest GenAI/presentation preparation. No M4 endpoints, controllers, business behavior, JWT middleware, dependency injection composition, startup seeding, or frontend features were implemented. No commit was created.
@@ -112,7 +114,7 @@ No behavior tests or existing test source were changed by this checkpoint. Only 
 Complete-suite command:
 
 ```powershell
-dotnet test TaskManager.sln --no-restore --no-build --verbosity minimal --diag TestResults/reconciliation-tests.log -- RunConfiguration.DotNetHostPath=C:/Maethrillian/NET-TechnicalAssessment/TestResults/HostLauncher/bin/Debug/net10.0/HostLauncher.exe
+dotnet test TaskManager.sln --no-restore --no-build --verbosity minimal --diag TestResults/reconciliation-tests.log -- RunConfiguration.DotNetHostPath=<historical-launcher-path>
 ```
 
 The existing ignored M3 HostLauncher was inspected and reused to correct this machine's loopback testhost endpoint redirection. It launches normal VSTest/xUnit and propagates the exit code; no assertions/application code/dependencies/machine settings changed. Plain runner reliability is not claimed or newly re-tested here. Diagnostics remain ignored local artifacts. No failing/aborted attempt is counted as passing evidence. Angular commands used the bundled Node directory on PATH; no frontend files/dependencies changed.

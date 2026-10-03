@@ -1,6 +1,5 @@
 # Technical Assessment — Project Definition & Execution Plan
 
-**Deadline:** October 4, 2026 — 10:00  
 **Repository:** Single public GitHub repository  
 **Project:** Personal Task Manager  
 **Primary objective:** Deliver a small, complete, secure, tested full-stack application that satisfies the assessment requirements and can be confidently explained during a live code review.
@@ -9,7 +8,7 @@
 
 # 1. Source of Truth
 
-Current status: M0–M7 and the post-M3 checkpoint are complete. Both controller-based hosts compose shared services, require one absolute SQLite file, initialize schema, validate compatible JWTs, and expose the specified auth/task endpoints. Auth.Api owns preserved demo seeding. Angular integrates both hosts with session restoration, scoped Bearer forwarding, guards/logout and responsive task CRUD using numeric status/calendar dates. M7 verified the full system, fixed long-username mobile overflow and untracked generated runtime artifacts. Submission/presentation (M8) remains. See M4_COMPLETION.md, M5_COMPLETION.md, M6_COMPLETION.md, M7_COMPLETION.md and REQUIREMENTS_TRACEABILITY.md.
+Current status: M0–M8 and the post-M3 checkpoint are complete. Both controller-based hosts compose shared services, require one absolute SQLite file, initialize schema, validate compatible JWTs, and expose the specified auth/task endpoints. Auth.Api owns preserved demo seeding. Angular integrates both hosts with session restoration, scoped Bearer forwarding, guards/logout and responsive task CRUD using numeric status/calendar dates. M7 verified the full system, fixed long-username mobile overflow and untracked generated runtime artifacts. M8 submission documentation and presentation preparation are complete; actual publication and human presentation/rehearsal are not claimed. See M8_COMPLETION.md, ARCHITECTURE.md, PRESENTATION_GUIDE.md and DEMO_CHECKLIST.md. See M4_COMPLETION.md, M5_COMPLETION.md, M6_COMPLETION.md, M7_COMPLETION.md and REQUIREMENTS_TRACEABILITY.md.
 
 Implementation decisions should follow this priority:
 
@@ -184,7 +183,7 @@ The system should remain intentionally small.
 
 **.NET 10 / ASP.NET Core**
 
-.NET 10 is currently an active LTS release with support through November 2028.
+.NET 10 is the selected target framework; the backend projects target `net10.0`.
 
 Use:
 
@@ -209,7 +208,7 @@ No:
 
 **Angular 22 + TypeScript**
 
-Angular 22 is currently under active support.
+Angular 22 is the selected frontend version; package.json and package-lock.json record the dependencies.
 
 Use:
 
@@ -403,7 +402,7 @@ Both M4 composition roots read `ConnectionStrings:TaskManager` (`ConnectionStrin
 
 # 10. Data Access Rules
 
-Repositories will contain explicit SQL using `Microsoft.Data.Sqlite`.
+Repositories contain explicit SQL using `Microsoft.Data.Sqlite`.
 
 All variable input must use SQL parameters.
 
@@ -450,7 +449,7 @@ TaskService
 
 Do not create a separate class for every CRUD verb unless implementation complexity later justifies it.
 
-Potential application abstractions:
+Implemented application abstractions:
 
 ```text
 IUserRepository
@@ -668,8 +667,8 @@ Minimum rules:
 
 - Title is required.
 - Title is trimmed.
-- Title has a reasonable maximum length, e.g. 120 characters.
-- Description has a reasonable maximum length, e.g. 1000 characters.
+- Title has a maximum length of 120 UTF-16 characters.
+- Description has a maximum length of 1000 UTF-16 characters.
 - Status must be valid.
 - Due date is required and must parse correctly.
 - User ownership is mandatory.
@@ -753,7 +752,7 @@ The password must still be stored as a hash.
 Seed:
 
 - demo user;
-- 2–3 representative tasks.
+- three representative tasks only when the demo account is newly inserted.
 
 Seeding should be idempotent.
 
@@ -781,32 +780,18 @@ Anonymous users attempting to access it should be redirected to `/login`.
 
 ---
 
-## Suggested structure
+## Implemented structure
 
 ```text
 src/app/
-│
-├── core/
-│   └── auth/
-│       ├── auth.service.ts
-│       ├── auth.interceptor.ts
-│       └── auth.guard.ts
-│
-├── tasks/
-│   ├── task-list/
-│   ├── task-form/
-│   ├── task.service.ts
-│   └── task.model.ts
-│
-├── shared/
-│
-├── app.component.ts
-└── app.routes.ts
+  core/api-config.ts
+  core/auth/          auth service, models, interceptor, guards and tests
+  auth/               shared login/registration standalone page and tests
+  tasks/              models, service, standalone page/template/CSS and tests
+  app.ts / app.config.ts / app.routes.ts
 ```
 
-Keep `shared` empty unless something genuinely becomes reusable.
-
-Delete it if unnecessary.
+There is no speculative shared directory or separate list/form component. The cohesive TasksPage uses local signals and Reactive Forms (DEC-018).
 
 ---
 
@@ -830,12 +815,9 @@ AuthService
 TaskService
     API communication
 
-TaskListComponent
-    task collection
-    loading/error state
-
-TaskFormComponent
-    reactive form
+TasksPage
+    task collection and loading/error signals
+    reactive create/edit form and deletion confirmation
 ```
 
 ---
@@ -939,7 +921,7 @@ Cross-host: a token obtained over HTTP from TaskManager.Auth.Api is accepted by 
 
 Frontend automated testing is useful but secondary to the backend testing explicitly requested by the assessment.
 
-If time permits, cover critical pieces such as:
+Implemented coverage includes:
 
 - authentication service;
 - interceptor;
@@ -951,6 +933,8 @@ Do not sacrifice required backend functionality or documentation solely to incre
 ---
 
 # 25. TDD Strategy
+
+This section records the intended methodology. Actual adoption was partial: selected observed red/green cycles and co-authored tests/implementation are distinguished in GENAI.md and METH-01 of REQUIREMENTS_TRACEABILITY.md.
 
 The assessment says TDD is preferred.
 
@@ -1177,6 +1161,8 @@ Do not automatically continue to the next milestone.
 
 # 29. Milestone Plan
 
+The following preserves the scoped implementation plan and milestone-time constraints. All milestones are complete; exclusions describe the scope of each milestone, not missing final functionality. Completion reports retain historical results.
+
 ## M0 — Repository Scaffold
 
 Create:
@@ -1383,7 +1369,9 @@ Complete:
 
 Perform clean-clone style validation.
 
-Confirm repository is public and contains no secrets.
+Completed in M8: reviewer README, actual architecture, final traceability and GenAI evidence index, presentation/code-review guide and deterministic demo checklist. Fresh local clone validation and public-readiness findings are in M8_COMPLETION.md. No actual human rehearsal or public GitHub submission is claimed.
+
+Inspect public-repository readiness without publishing or changing Git remotes. Actual public GitHub availability is a human submission action; M8 does not create a commit or push.
 
 ---
 

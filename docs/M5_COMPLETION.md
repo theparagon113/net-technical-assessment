@@ -1,5 +1,7 @@
 # M5 Completion — Angular Authentication
 
+Publication note: this is a historical milestone record. Machine-specific executable paths in recorded commands are generalized as labeled placeholders; original scope, failures, successful retries, counts and evidence limits are preserved. Ignored launcher/runtime helpers are historical provenance, not reviewer prerequisites.
+
 ## Implemented
 
 M5 only is complete: responsive login/registration, focused signal-based AuthService, sessionStorage JWT handling, authoritative current-user restoration, scoped functional interceptor, guards and logout. Existing uncommitted M0–M4 work was preserved. No backend behavior/dependency files or historical milestone reports were changed by M5. No commit, task CRUD UI or later milestone was started.
@@ -71,11 +73,11 @@ Commands used bundled supported Node on PATH. Backend tests reused the existing 
 | `$env:M5_LIVE='1'; npm test -- --watch=false` (both hosts running) | Exit 0; 37 passed, 0 failed/skipped; 4 files passed. |
 | `npm run build` | Exit 0; production bundle 291.17 kB raw / 77.58 kB estimated transfer; no budget warnings. |
 | `dotnet build TaskManager.sln --verbosity minimal` | Exit 0; all 9 projects, 0 warnings/errors after approved NuGet-config retry. |
-| `dotnet test TaskManager.sln --no-restore --verbosity minimal --diag TestResults/m5-final.log -- RunConfiguration.DotNetHostPath=C:/Maethrillian/NET-TechnicalAssessment/TestResults/HostLauncher/bin/Debug/net10.0/HostLauncher.exe` | Exit 0; Application 65 + Infrastructure 48 + Auth.Api 23 + Task.Api 55 = 191 passed, 0 failed/skipped. |
+| `dotnet test TaskManager.sln --no-restore --verbosity minimal --diag TestResults/m5-final.log -- RunConfiguration.DotNetHostPath=<historical-launcher-path>` | Exit 0; Application 65 + Infrastructure 48 + Auth.Api 23 + Task.Api 55 = 191 passed, 0 failed/skipped. |
 | `git diff --check` | Exit 0; only Git line-ending notices. |
 | Existing Prettier on affected Web files | Exit 0 after approved restricted-write retry. |
 
-Initial restricted build could not read NuGet.Config; restricted Angular production build exited without diagnostics and Vite cache creation was denied. Approved retries passed. Sandboxed live hosts returned safe 500 and DataProtection access diagnostics; normal-runtime relaunch made live/browser operations pass. PowerShell Stop-Process failed with an internal null-reference error, so only inspected validation processes were stopped using the .NET Process API. No application security was weakened. Two first-run router assertions failed because they did not await logout navigation; making logout's navigation promise available and awaiting it passed. The first patch needed parent directories created; traceability patch context was corrected. These are actual observations, not invented TDD evidence.
+Initial restricted build could not read NuGet.Config; restricted Angular production build exited without diagnostics and Vite cache creation was denied. Approved retries passed. Sandboxed live hosts returned safe 500 and DataProtection access diagnostics; normal-runtime relaunch made live/browser operations pass. Validation cleanup stopped only inspected processes. No application security was weakened. Two first-run router assertions failed because they did not await logout navigation; making logout's navigation promise available and awaiting it passed. These are actual observations, not invented TDD evidence.
 
 ## Assumptions and deviations
 

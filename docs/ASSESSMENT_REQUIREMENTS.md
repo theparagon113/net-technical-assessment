@@ -2,7 +2,7 @@
 
 ## Authority and classification
 
-The authoritative external source is **Net - BLA - Technical Interview Exercise - V5.pdf**. This document is the repository's canonical textual representation of the complete requirements supplied by the developer during the reconciliation checkpoint. The original PDF was reviewed by the developer during reconciliation; repository agents operate from this canonical transcription unless the PDF is explicitly available to them. Do not copy or commit the proprietary original PDF without explicit authorization. If the transcription conflicts with the original assessment, the original assessment wins.
+The authoritative external source is **Net - BLA - Technical Interview Exercise - V5.pdf**. This canonical transcription was originally prepared from the complete requirements supplied during the reconciliation checkpoint, without independent agent inspection or committing the proprietary PDF. It has since been manually cross-checked against the original assessment outside the repository. The original assessment remains authoritative if a discrepancy is found; the PDF is not tracked and is not a submission dependency.
 
 Mandatory requirements below preserve the assessment's meaning. Evaluation criteria describe how the submission is assessed. TDD is an expected methodology, with test-first practice preferred where practical; no fabricated chronology is acceptable. Project-specific choices (SQLite, Angular 22, JWT, ownership response policy, two executable hosts, controller pipeline) are recorded in PROJECT_DEFINITION.md and DECISIONS.md rather than attributed verbatim to the assessment. REQUIREMENTS_TRACEABILITY.md tracks evidence and remaining work; it cannot weaken requirements.
 

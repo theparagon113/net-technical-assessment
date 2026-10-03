@@ -1,5 +1,7 @@
 # M6 Completion — Angular Task CRUD
 
+Publication note: this is a historical milestone record. Machine-specific executable paths in recorded commands are generalized as labeled placeholders; original scope, failures, successful retries, counts and evidence limits are preserved. Ignored launcher/runtime helpers are historical provenance, not reviewer prerequisites.
+
 ## Implemented
 
 M6 only is complete and verified. Protected /tasks now provides the authenticated user's task list, create/edit forms, status changes and inline confirmed deletion. Loading, empty state, disabled submissions, validation, safe API errors and retry/reload are explicit. Success state uses persisted POST/PUT results; failed writes retain drafts/rows and do not claim success. Ownership IDs are neither displayed nor editable.
@@ -65,7 +67,7 @@ Used bundled Node 24.19.0 and existing Angular CLI 22.2.1. Direct node invocatio
 | M5_LIVE=1 and M6_LIVE=1, same test command | 52 passed, 0 failed/skipped; 7 files passed; exit 0. |
 | npm run build (equivalent bundled Node CLI invocation) | Production build passed; 314.57 kB raw / 83.03 kB estimated transfer; no budget warnings; exit 0. |
 | dotnet build TaskManager.sln --no-restore --verbosity minimal | 9 projects; 0 warnings/errors; exit 0. |
-| dotnet test TaskManager.sln --no-restore --verbosity minimal --diag TestResults/m6-final.log -- RunConfiguration.DotNetHostPath=C:/Maethrillian/NET-TechnicalAssessment/TestResults/HostLauncher/bin/Debug/net10.0/HostLauncher.exe | Application 65 + Infrastructure 48 + Auth.Api 23 + Task.Api 55 = 191 passed, none failed/skipped; exit 0. |
+| dotnet test TaskManager.sln --no-restore --verbosity minimal --diag TestResults/m6-final.log -- RunConfiguration.DotNetHostPath=<historical-launcher-path> | Application 65 + Infrastructure 48 + Auth.Api 23 + Task.Api 55 = 191 passed, none failed/skipped; exit 0. |
 | dotnet list TaskManager.sln package --include-transitive --no-restore | Passed; no Entity Framework, Dapper or MediatR direct/transitive dependency. |
 | Existing Prettier on affected Angular source | Passed. |
 | git diff --check | Passed after EOF whitespace cleanup; only line-ending notices. |
