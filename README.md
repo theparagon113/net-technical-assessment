@@ -25,6 +25,11 @@ Application services and Domain invariants handle business rules; Infrastructure
 
 **Prerequisites:** Git, .NET 10 SDK (the backend targets `net10.0`), and Node.js with npm (project version: 11.11.0). Recommend [Node.js 24 LTS](https://nodejs.org/en/about/previous-releases); when using Node 24, **24.15.0 or newer within the 24.x series is required**. The full supported Node range in `package.json` is `^22.22.3 || ^24.15.0 || >=26.0.0`. Dependency restoration needs NuGet/npm access. SQLite requires no database server.
 
+Install prerequisites if needed:
+- .NET 10 SDK: https://dotnet.microsoft.com/download/dotnet/10.0
+- Node.js 24 LTS: https://nodejs.org/
+- Git: https://git-scm.com/downloads
+
 1. Open PowerShell **at the cloned repository root**. Verify prerequisites, restore and build:
 
    ```powershell
