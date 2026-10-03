@@ -39,7 +39,7 @@ Requirement inventory (each ID has evidence and remaining work in the matrix):
 - BAN-01/02/03: no Entity Framework, Dapper or Mediator/MediatR packages or substitute implementation found, including transitive backend package inventory.
 - GEN-01/02/03/04: actual prompt excerpts/storage samples exist; task model/ownership exists; required REST task API prompt and representative HTTP output are pending M4. Required fields and due_date meaning are preserved explicitly.
 - GEN-05/06/07/08/09: real validation/correction/edge-case/auth/validation evidence exists; HTTP/browser evidence remains future. Genuine human second-host correction recorded.
-- PRES-01/02/03: story, design choices, architecture and functionality presentation requirements explicitly planned; preparation notes are not a completed presentation/demo.
+- PRES-01/02/03: story, design choices, architecture and functionality presentation requirements explicitly planned; the checkpoint did not claim a completed presentation/demo.
 - EVAL-01/02/03/04: readable organization, functionality/testing, frontend/presentation quality, GenAI fluency/prompt engineering/critical evaluation tracked; final end-to-end quality and demonstration remain pending.
 
 ## Files created or updated
@@ -54,7 +54,7 @@ Requirement inventory (each ID has evidence and remaining work in the matrix):
 | docs/USER_STORY.md | Adds anonymous registration/login/public information and protected current-user acceptance criteria while retaining the product story/task/isolation criteria. |
 | docs/GENAI.md | Actual human review correction plus a seven-part final-deliverable readiness table; API prompt/sample pending rather than fabricated. |
 | README.md | Accurate M3 + checkpoint status/tree, both host/test projects, canonical links, absolute shared database/JWT preparation, future startup ownership and pending functionality. |
-| docs/PRESENTATION_NOTES.md (new) | Story/design/architecture/testing/GenAI/live-demo preparation outline, clearly pending final M8 presentation. No separate notes existed before this audit. |
+| Personal rehearsal material (subsequently removed) | Story/design/architecture/testing/GenAI/live-demo preparation was added at this checkpoint, clearly pending final M8 presentation. |
 | TaskManager.sln | Includes Auth.Api under src/backend and Auth.Api.Tests under tests; all solution build configurations. |
 | src/backend/TaskManager.Auth.Api (new) | .csproj, Program.cs, appsettings.json, appsettings.Development.json, Properties/launchSettings.json. |
 | tests/TaskManager.Auth.Api.Tests (new) | Dedicated .csproj matching existing host test convention. |

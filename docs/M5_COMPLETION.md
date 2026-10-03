@@ -10,7 +10,7 @@ M5 only is complete: responsive login/registration, focused signal-based AuthSer
 
 - Web `src/app/core/api-config.ts`; `core/auth/auth.models.ts`, `auth.service.ts`, `auth.interceptor.ts`, `auth.guard.ts`, `auth.spec.ts`, `auth.live.spec.ts`.
 - Web `src/app/auth/auth-page.ts`, `.html`, `.spec.ts`, `session-page.ts`; root app config/routes/template/spec and global styles.
-- Root/frontend README; PROJECT_DEFINITION, USER_STORY, DECISIONS (DEC-017), GENAI, REQUIREMENTS_TRACEABILITY, PRESENTATION_NOTES and this report.
+- Root/frontend README; PROJECT_DEFINITION, USER_STORY, DECISIONS (DEC-017), GENAI, REQUIREMENTS_TRACEABILITY; personal rehearsal material subsequently removed; this report.
 - No package/lockfile changes or new dependencies. Ignored `.local` contains disposable validation database/logs/process metadata/UI screenshot; TestResults contains diagnostics only.
 
 ## Routes
@@ -87,6 +87,6 @@ No assessment/architecture/scope deviation. The prompt's conditional no-token re
 
 ## Documentation and human review items
 
-README documents both URLs, startup, routes, storage trade-off, auth/401/logout and ordinary/live tests. DEC-017 records actual choices. GENAI records actual request excerpts, output, observed corrections and evidence. All 47 traceability IDs reviewed; applicable auth/frontend rows updated with remaining M6/M7/M8 work. Presentation notes describe auth evidence without claiming final slides/submission.
+README documents both URLs, startup, routes, storage trade-off, auth/401/logout and ordinary/live tests. DEC-017 records actual choices. GENAI records actual request excerpts, output, observed corrections and evidence. All 47 traceability IDs reviewed; applicable auth/frontend rows updated with remaining M6/M7/M8 work. Personal rehearsal material at M5 described auth evidence without claiming final slides/submission; that material was subsequently removed.
 
 Review DEC-017 and actual registration-token behavior, sessionStorage/XSS trade-off, public base URLs/CORS for the evaluator, and the opt-in probe's disposable-database requirement. Standard test-runner portability and final clean-clone/full-browser coverage remain human/M7/M8 review items. M6 owns all task UI. Validation processes were stopped after checks; no commit was created. Stop after M5.

@@ -27,4 +27,4 @@ try { npm test -- --watch=false }
 finally { Remove-Item Env:M5_LIVE, Env:M6_LIVE }
 ```
 
-Live suite: 52 passed/no skips. Probes create test accounts and mutate disposable tasks. See [M8 validation](../../../docs/M8_COMPLETION.md), [architecture](../../../docs/ARCHITECTURE.md), [presentation](../../../docs/PRESENTATION_GUIDE.md) and [demo](../../../docs/DEMO_CHECKLIST.md). Historical results remain in M5–M7 reports.
+Live suite: 52 passed/no skips. Probes create test accounts and mutate disposable tasks. See [M8 validation](../../../docs/M8_COMPLETION.md) and [architecture](../../../docs/ARCHITECTURE.md). Historical results remain in M5–M7 reports.

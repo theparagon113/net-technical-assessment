@@ -154,4 +154,4 @@ Angular Reactive Forms mirror these boundaries for feedback and preserve unsucce
 
 Human assessment review established the two-host requirement and corrected generated planning. Focused services, specific repositories, explicit SQL and framework cryptography kept the implementation explainable. Live HTTP/browser checks exposed issues beyond unit-test boundaries.
 
-Requirement traceability and manual review complement automated checks. Generated code, prompts and claims are accepted only with recorded evidence. Selected TDD cycles remain useful evidence; partial adoption stays explicit. Presentation material is prepared, while rehearsal, public publication and delivery remain human actions.
+Requirement traceability and manual review complement automated checks. Generated code, prompts and claims are accepted only with recorded evidence. Selected TDD cycles remain useful evidence; partial adoption stays explicit. The story, architecture, decisions and GenAI evidence support technical review; rehearsal, public publication and delivery remain human actions.

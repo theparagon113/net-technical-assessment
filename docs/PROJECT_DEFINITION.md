@@ -8,7 +8,7 @@
 
 # 1. Source of Truth
 
-Current status: M0–M8 and the post-M3 checkpoint are complete. Both controller-based hosts compose shared services, require one absolute SQLite file, initialize schema, validate compatible JWTs, and expose the specified auth/task endpoints. Auth.Api owns preserved demo seeding. Angular integrates both hosts with session restoration, scoped Bearer forwarding, guards/logout and responsive task CRUD using numeric status/calendar dates. M7 verified the full system, fixed long-username mobile overflow and untracked generated runtime artifacts. M8 submission documentation and presentation preparation are complete; actual publication and human presentation/rehearsal are not claimed. See M8_COMPLETION.md, ARCHITECTURE.md, PRESENTATION_GUIDE.md and DEMO_CHECKLIST.md. See M4_COMPLETION.md, M5_COMPLETION.md, M6_COMPLETION.md, M7_COMPLETION.md and REQUIREMENTS_TRACEABILITY.md.
+Current status: M0–M8 and the post-M3 checkpoint are complete. Both controller-based hosts compose shared services, require one absolute SQLite file, initialize schema, validate compatible JWTs, and expose the specified auth/task endpoints. Auth.Api owns preserved demo seeding. Angular integrates both hosts with session restoration, scoped Bearer forwarding, guards/logout and responsive task CRUD using numeric status/calendar dates. M7 verified the full system, fixed long-username mobile overflow and untracked generated runtime artifacts. M8 submission documentation is complete; actual publication and human presentation/rehearsal are not claimed. See M8_COMPLETION.md and ARCHITECTURE.md. See M4_COMPLETION.md, M5_COMPLETION.md, M6_COMPLETION.md, M7_COMPLETION.md and REQUIREMENTS_TRACEABILITY.md.
 
 Implementation decisions should follow this priority:
 
@@ -1369,7 +1369,7 @@ Complete:
 
 Perform clean-clone style validation.
 
-Completed in M8: reviewer README, actual architecture, final traceability and GenAI evidence index, presentation/code-review guide and deterministic demo checklist. Fresh local clone validation and public-readiness findings are in M8_COMPLETION.md. No actual human rehearsal or public GitHub submission is claimed.
+Completed in M8: reviewer README, actual architecture, final traceability and GenAI evidence index. Personal rehearsal material produced in M8 was subsequently removed; reviewer documentation and validation evidence remain. Fresh local clone validation and public-readiness findings are in M8_COMPLETION.md. No actual human rehearsal or public GitHub submission is claimed.
 
 Inspect public-repository readiness without publishing or changing Git remotes. Actual public GitHub availability is a human submission action; M8 does not create a commit or push.
 

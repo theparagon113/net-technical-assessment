@@ -1,6 +1,6 @@
 # M8 — Submission package and presentation readiness
 
-Publication note: this is a historical milestone record. Machine-specific executable paths in recorded commands are generalized as labeled placeholders; original scope, failures, successful retries, counts and evidence limits are preserved. Ignored launcher/runtime helpers are historical provenance, not reviewer prerequisites.
+Publication note: this is a historical milestone record. Machine-specific executable paths in recorded commands are generalized as labeled placeholders; original scope, failures, successful retries, counts and evidence limits are preserved. Ignored launcher/runtime helpers are historical provenance, not reviewer prerequisites. Personal rehearsal material recorded below was subsequently removed; file counts, staging instructions and preparation claims describe the historical reviews, not the current documentation inventory.
 
 ## Status and implemented scope
 
@@ -14,9 +14,9 @@ No product functionality, business semantics, API contract, architecture, authen
 | --- | --- |
 | `README.md` | Reviewer entry point: story, structure, architecture links, full setup/configuration/demo credentials, security/contracts, tests/live probes, GenAI, assumptions and limitations; removed machine-specific runner setup requirement and premature API shutdown in the example. |
 | `docs/ARCHITECTURE.md` (new) | Actual component/runtime Mermaid diagram, inward compile-time dependencies, auth/task flows, claims/ownership, database initialization/seeding and verification boundaries. |
-| `docs/PRESENTATION_GUIDE.md` (new) | Thirteen-section walkthrough with code to open, implementation details, likely interview questions and accurate repository-specific answers. |
-| `docs/DEMO_CHECKLIST.md` (new) | Deterministic setup and five-minute seeded login/CRUD/date/session demo; disposable-data and failure contingencies. |
-| `docs/PRESENTATION_NOTES.md` | Replace stale pre-task outline with final guide/navigation; distinguish preparation from human presentation. |
+| Personal walkthrough preparation (subsequently removed) | Thirteen-section walkthrough with code to open, implementation details, likely interview questions and accurate repository-specific answers. |
+| Personal demo preparation (subsequently removed) | Deterministic setup and five-minute seeded login/CRUD/date/session demo; disposable-data and failure contingencies. |
+| Personal preparation navigation (subsequently removed) | Replaced the stale pre-task outline with final preparation navigation; distinguished preparation from human presentation. |
 | `docs/REQUIREMENTS_TRACEABILITY.md` | Audit all 47 IDs, final implementation/evidence/status; preserve historical audits and explicit partial TDD adoption. |
 | `docs/GENAI.md` | Final seven-deliverable evidence index, label old readiness table as checkpoint history, actual M8 request/corrections/validation; preserve real prompts/output and human corrections. |
 | `docs/PROJECT_DEFINITION.md` | Final status and actual Angular organization; clarify publication is not performed by M8; preserve milestone-time context. |
@@ -146,9 +146,9 @@ This subsequent review refines public documentation without repeating M8 applica
 | `docs/GENAI.md` | Replace milestone narration with labeled REST prompt excerpts/representative prompt, real code, recorded validation, correction case studies, edge cases, authentication and validation handling. Preserve partial TDD and environment/evidence limits. |
 | `docs/PROJECT_DEFINITION.md` | Remove private scheduling context, describe selected versions/current validation/seed behavior precisely, and distinguish historical milestone/TDD plans from final implementation. |
 | `docs/REQUIREMENTS_TRACEABILITY.md` | Align GenAI references with the refined sections and explicitly identify the four untracked submission documents. Preserve all 47 IDs/statuses. |
-| `docs/PRESENTATION_NOTES.md` | Keep final guide navigation aligned with the GenAI structure and historical-preservation note. |
-| `docs/PRESENTATION_GUIDE.md` | Align GenAI navigation and distinguish the historical test-host workaround from M8's ordinary fresh-clone test evidence. |
-| `docs/DEMO_CHECKLIST.md` | Use a fresh disposable filename for deterministic seeds and link targeted shutdown instructions. |
+| Personal preparation navigation (subsequently removed) | Kept navigation aligned with the GenAI structure and historical-preservation note. |
+| Personal walkthrough preparation (subsequently removed) | Align GenAI navigation and distinguish the historical test-host workaround from M8's ordinary fresh-clone test evidence. |
+| Personal demo preparation (subsequently removed) | Use a fresh disposable filename for deterministic seeds and link targeted shutdown instructions. |
 | `docs/M3_COMPLETION.md`, `docs/M4_COMPLETION.md`, `docs/M5_COMPLETION.md`, `docs/M6_COMPLETION.md`, `docs/M7_COMPLETION.md`, `docs/RECONCILIATION_COMPLETION.md` | Generalize personal executable paths as explicitly labeled historical placeholders. Condense low-value editing/process-cleanup detail in M5; retain engineering corrections, failed attempts, successful retries and milestone-time scope/counts. |
 | `docs/M8_COMPLETION.md` | Generalize historical runtime paths and append this separately labeled review; preserve original M8 validation facts. |
 
@@ -166,10 +166,10 @@ Human review's second-API correction remains explicit: it occurred after M3 and 
 
 ### Review checks and remaining publication actions
 
-- `git diff --check` passed. Relative Markdown file links resolve across all 20 reviewed documents; linked heading anchors were checked. The four intended submission files `ARCHITECTURE.md`, `DEMO_CHECKLIST.md`, `M8_COMPLETION.md` and `PRESENTATION_GUIDE.md` exist at the correct relative paths but remain untracked/unstaged by explicit instruction. Links to them are not claimed to resolve to tracked files.
+- `git diff --check` passed. Relative Markdown file links resolve across all 20 reviewed documents; linked heading anchors were checked. At that review, four intended submission documents existed at the correct relative paths but remained untracked/unstaged by explicit instruction; links were not claimed to resolve to tracked files. Two were personal rehearsal material subsequently removed; the architecture and this validation report remain.
 - Current-tree scan covered 122 tracked files plus those four documents for obvious private keys, provider tokens, literal JWT/signing keys, credential-bearing connection strings, email/phone data, personal paths and private conversational phrasing. No obvious secret/private-data candidates remained. Broader credential matches were reviewed as public demo data, synthetic test fixtures, generated configuration references, dependency names or form metadata. This is a targeted publication scan, not proof that every possible secret format is absent.
 - README and architecture PowerShell blocks parsed without errors; the signing-key example generated 32 bytes without displaying or persisting the value. Ports/configuration names and sample output were checked against actual source. Full setup, application tests, browser flows and dependency audits were not rerun in this documentation pass.
 - Baseline/current hashes confirm this review changed documentation only: 13 tracked Markdown files and the four authorized untracked documents. Source, tests, configuration, project/solution files and dependencies retain their entry-state bytes. Existing edits to frontend `.vscode/launch.json`, `angular.json` and its README were preserved. Consequently the complete working-tree diff includes pre-existing configuration changes; they are not attributed to this review.
 - `git status --short`, `git diff --stat` and diffs were inspected. Git's tracked diff statistics include pre-existing changes and omit the four untracked documents. Nothing was staged or committed; no Git remote or history was changed.
 
-Before submission, manually review/stage the four intended untracked documents and review the pre-existing frontend configuration edits separately. Older Git revisions still contain historical runtime artifacts and original personal path provenance; this pass scrubs current public documents without rewriting history. Public GitHub availability remains unverified because the source repository has no configured remote. Rehearse the documented setup/demo before publication.
+At that review, remaining submission actions included manually reviewing/staging the four intended untracked documents and reviewing the pre-existing frontend configuration edits separately. Older Git revisions still contain historical runtime artifacts and original personal path provenance; this pass scrubs current public documents without rewriting history. Public GitHub availability remains unverified because the source repository has no configured remote. Rehearse the documented setup/demo before publication.

@@ -97,7 +97,7 @@ Install prerequisites if needed:
 
    Alternatively, choose **Create an account** on the login page (or open [http://localhost:4200/register](http://localhost:4200/register)). Registration signs you in automatically; a new account starts with an empty task list.
 
-For shutdown, HTTPS profiles, HTTP probes and troubleshooting, see [local runtime details](docs/ARCHITECTURE.md#local-runtime-reference). The [demo checklist](docs/DEMO_CHECKLIST.md) provides a repeatable five-minute walkthrough.
+For shutdown, HTTPS profiles, HTTP probes and troubleshooting, see [local runtime details](docs/ARCHITECTURE.md#local-runtime-reference).
 
 ## Running tests
 
@@ -129,12 +129,10 @@ Tests cover Application/business behavior, real SQLite access, both HTTP pipelin
 - [GenAI prompt, generated output, validation and corrections](docs/GENAI.md)
 - [Design decisions](docs/DECISIONS.md)
 - [Requirements traceability](docs/REQUIREMENTS_TRACEABILITY.md)
-- [Presentation and code-review guide](docs/PRESENTATION_GUIDE.md)
-- [Demo checklist](docs/DEMO_CHECKLIST.md)
 - [Final validation and publication review](docs/M8_COMPLETION.md)
 
 ## Limitations / trade-offs
 
 SQLite suits this small workload; schema initialization is not a general migration system. The short-lived JWT in sessionStorage is accessible under XSS, and logout does not revoke a copied token. No refresh tokens, password recovery, sharing, pagination or realtime concurrency handling are implemented. HTTP profiles are for local development; no deployment or production-readiness claim is made.
 
-M0–M8 implementation and presentation preparation are complete. TDD adoption was partial: selected failing/passing cycles are recorded, alongside co-authored implementation/tests. [Decisions](docs/DECISIONS.md) and [GenAI evidence](docs/GENAI.md) explain these trade-offs. Public publication and human rehearsal/presentation remain submission actions.
+M0–M8 implementation is complete. TDD adoption was partial: selected failing/passing cycles are recorded, alongside co-authored implementation/tests. [Decisions](docs/DECISIONS.md) and [GenAI evidence](docs/GENAI.md) explain these trade-offs. Public publication and human rehearsal/presentation remain submission actions.

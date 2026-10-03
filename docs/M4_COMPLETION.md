@@ -15,7 +15,7 @@ Shared presentation source composes absolute SQLite configuration, CORS, Problem
 - `src/backend/SharedApi/ApiFoundation.cs`, `ApiExceptionHandler.cs`, `CurrentIdentity.cs` (linked into both hosts).
 - `src/backend/TaskManager.Infrastructure/Authentication/JwtValidation.cs`.
 - Both API test project files; `TaskManager.Auth.Api.Tests/AuthHttpTests.cs`; `TaskManager.Api.Tests/TaskHttpTests.cs`, `StartupTests.cs`, `FoundationHttpTests.cs`; linked `tests/SharedApiTests/ApiTestFactory.cs`, `InvalidTokens.cs`.
-- README; PROJECT_DEFINITION, USER_STORY, DECISIONS (DEC-016), GENAI, REQUIREMENTS_TRACEABILITY, PRESENTATION_NOTES; this completion report.
+- README; PROJECT_DEFINITION, USER_STORY, DECISIONS (DEC-016), GENAI, REQUIREMENTS_TRACEABILITY; personal rehearsal material subsequently removed; this completion report.
 
 These are M4 changes, not an inventory attributing the already-uncommitted M3/checkpoint work to M4. Historical M3/checkpoint completion reports were not edited. No frontend source/dependency files changed.
 
@@ -85,7 +85,7 @@ New required dependencies: Microsoft.AspNetCore.Authentication.JwtBearer 10.0.12
 
 ## Documentation updated
 
-README now describes runnable backend setup, matching common external configuration, ports, public demo credentials, API/status/wire contracts, tests and limitations. DEC-016 records shared composition and HTTP-contract choices. GENAI includes actual request excerpts, a clearly labeled representative complete prompt, actual generated REST output, validation and observed corrections. All 47 traceability IDs were reviewed; completed backend/HTTP/REST-output requirements have implementation/test evidence, and frontend/browser/final submission/presentation requirements remain incomplete. Canonical project/story and presentation preparation reflect current M4 evidence. Historical reports remain intact.
+README now describes runnable backend setup, matching common external configuration, ports, public demo credentials, API/status/wire contracts, tests and limitations. DEC-016 records shared composition and HTTP-contract choices. GENAI includes actual request excerpts, a clearly labeled representative complete prompt, actual generated REST output, validation and observed corrections. All 47 traceability IDs were reviewed; completed backend/HTTP/REST-output requirements have implementation/test evidence, and frontend/browser/final submission/presentation requirements remain incomplete. Canonical project/story and the personal rehearsal material available at M4 reflected M4 evidence. That personal material was subsequently removed; historical reports remain intact.
 
 ## Assumptions and deviations
 
