@@ -135,4 +135,4 @@ Tests cover Application/business behavior, real SQLite access, both HTTP pipelin
 
 SQLite suits this small workload; schema initialization is not a general migration system. The short-lived JWT in sessionStorage is accessible under XSS, and logout does not revoke a copied token. No refresh tokens, password recovery, sharing, pagination or realtime concurrency handling are implemented. HTTP profiles are for local development; no deployment or production-readiness claim is made.
 
-M0–M8 implementation is complete. TDD adoption was partial: selected failing/passing cycles are recorded, alongside co-authored implementation/tests. [Decisions](docs/DECISIONS.md) and [GenAI evidence](docs/GENAI.md) explain these trade-offs. Public publication and human rehearsal/presentation remain submission actions.
+M0–M8 implementation is complete. Human rehearsal and presentation remain submission activities.
